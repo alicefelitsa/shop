@@ -1,0 +1,6 @@
+{
+  "bossPort": 8100,
+  "userPort": 8200,
+  "QueueCapacity": 1000,
+  "SuddenCapacity": 2000
+}
