@@ -189,7 +189,7 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { products, banners } from '../data/products'
+import { products, banners } from '@/data/products'
 
 export default {
   name: 'HomePage',
