@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import { categories } from '../data/products'
+import { categories } from '@/data/products'
 
 export default {
   name: 'ProductCard',
