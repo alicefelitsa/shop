@@ -1,40 +1,40 @@
 <template>
   <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </nav>
-    <router-view />
+    <SiteHeader />
+    <main class="main-content">
+      <transition name="page" mode="out-in">
+        <router-view />
+      </transition>
+    </main>
+    <SiteFooter />
   </div>
 </template>
 
 <script>
+import SiteHeader from './components/SiteHeader.vue'
+import SiteFooter from './components/SiteFooter.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    SiteHeader,
+    SiteFooter
+  }
 }
 </script>
 
-<style>
+<style scoped>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-  text-decoration: none;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
+.main-content {
+  flex: 1;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 </style>
