@@ -36,17 +36,15 @@ func SetupRouter() *gin.Engine {
 		boss.POST("/GetPlayVideo", controller.GetPlayVideo)
 
 	}
-	user := router.Group("/api/user", middleware.UserAuthorization)
+	web := router.Group("/api/web")
 	{
-		user.POST("/login", controller.Login)
-		user.GET("/getMovieList", controller.GetMovieList)
-		user.GET("/getVideoDetails", controller.GetVideoDetails)
+		web.GET("/getProduct", controller.GetProduct)
 
 	}
-	file := router.Group("/")
-	{
-		file.Static("/movie", "./movie")
-	}
+	//file := router.Group("/")
+	//{
+	//	file.Static("/movie", "./movie")
+	//}
 	//ws := router.Group("/ws")
 	//{
 	//	controller.StartClientManager()
