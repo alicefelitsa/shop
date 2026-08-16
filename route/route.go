@@ -38,7 +38,7 @@ func SetupRouter() *gin.Engine {
 	}
 	web := router.Group("/api/web")
 	{
-		web.GET("/getProduct", controller.GetProduct)
+		web.GET("/GetProduct", controller.GetProduct)
 
 	}
 	//file := router.Group("/")

@@ -3,53 +3,41 @@
     <div class="card-image">
       <img
         v-lazy
-        :data-src="product.thumbnail"
+        :data-src="product.album"
         :alt="product.name"
         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect fill='%23edf2f7' width='400' height='400'/%3E%3C/svg%3E"
         loading="lazy"
       />
-      <div class="card-badges">
-        <span v-if="product.onSale" class="badge badge-sale">Sale</span>
-        <span v-if="product.bestSeller" class="badge badge-best">Best Seller</span>
-      </div>
       <div class="card-overlay">
         <span class="view-btn">View Details</span>
       </div>
     </div>
     <div class="card-body">
-      <span class="card-category">{{ categoryName }}</span>
+      <span class="card-category">{{ product.category }}</span>
       <h3 class="card-title">{{ product.name }}</h3>
       <div class="card-meta">
         <div class="card-rating">
           <span class="stars">
-            <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= Math.round(product.rating) }">★</span>
+            <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= Math.round(product.level) }">★</span>
           </span>
-          <span class="rating-value">{{ Number(product.rating).toFixed(1) }}</span>
+          <span class="rating-value">{{ Number(product.level).toFixed(1) }}</span>
         </div>
-        <span v-if="product.specs && product.specs.purity" class="card-purity">{{ product.specs.purity }} Purity</span>
+        <span v-if="product.purity" class="card-purity">{{ product.purity }} Purity</span>
       </div>
       <div class="card-price">
-        <span class="price-range">${{ product.price.toFixed(2) }} – ${{ product.priceMax.toFixed(2) }}</span>
+        <span class="price-range">{{ product.price }}</span>
       </div>
     </div>
   </router-link>
 </template>
 
 <script>
-import { categories } from '@/data/products'
-
 export default {
   name: 'ProductCard',
   props: {
     product: {
       type: Object,
       required: true
-    }
-  },
-  computed: {
-    categoryName() {
-      const cat = categories.find(c => c.id === this.product.category)
-      return cat ? cat.name : this.product.category
     }
   }
 }

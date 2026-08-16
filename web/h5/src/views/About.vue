@@ -464,6 +464,15 @@ export default {
   line-height: 1.6;
 }
 
+/* 压缩各区块上下内边距，减少衔接处空白 */
+.story-section,
+.mission-section,
+.timeline-section,
+.team-section {
+  padding-top: 36px;
+  padding-bottom: 36px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1023px) {
   .page-header { height: 280px; }
@@ -491,6 +500,14 @@ export default {
 
   .story-section {
     padding-top: 20px;
+    padding-bottom: 24px;
+  }
+
+  .mission-section,
+  .timeline-section,
+  .team-section {
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
 
   .story-image img { height: 260px; }

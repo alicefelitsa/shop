@@ -14,48 +14,35 @@
           <!-- Image Gallery -->
           <div class="detail-gallery">
             <div class="gallery-main">
-              <img :src="activeImage" :alt="product.name" />
-              <div v-if="product.onSale" class="sale-badge">Sale</div>
-              <div v-if="product.bestSeller" class="best-badge">Best Seller</div>
-            </div>
-            <div class="gallery-thumbs" v-if="product.images.length > 1">
-              <button
-                v-for="(img, idx) in product.images"
-                :key="idx"
-                class="thumb-btn"
-                :class="{ active: activeImageIndex === idx }"
-                @click="activeImageIndex = idx"
-              >
-                <img :src="img" :alt="product.name + ' image ' + (idx + 1)" />
-              </button>
+              <img :src="product.album" :alt="product.name" />
             </div>
           </div>
 
           <!-- Product Info -->
           <div class="detail-info">
-            <span class="detail-category">{{ categoryName }}</span>
+            <span class="detail-category">{{ product.category }}</span>
             <h1 class="detail-title">{{ product.name }}</h1>
 
             <!-- Rating -->
             <div class="detail-rating">
               <span class="stars">
-                <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= Math.round(product.rating) }">★</span>
+                <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= Math.round(product.level) }">★</span>
               </span>
-              <span class="rating-text">{{ Number(product.rating).toFixed(1) }}</span>
+              <span class="rating-text">{{ Number(product.level).toFixed(1) }}</span>
             </div>
 
             <!-- Price -->
             <div class="detail-price">
-              <span class="price-range">${{ product.price.toFixed(2) }} – ${{ product.priceMax.toFixed(2) }}</span>
+              <span class="price-range">{{ product.price }}</span>
             </div>
 
             <!-- Description -->
-            <p class="detail-desc">{{ product.description }}</p>
+            <p class="detail-desc">{{ product.Introduction }}</p>
 
             <!-- Purity Badge -->
-            <div v-if="product.specs && product.specs.purity" class="purity-highlight">
+            <div v-if="product.purity" class="purity-highlight">
               <span class="purity-label">Purity</span>
-              <span class="purity-value">{{ product.specs.purity }}</span>
+              <span class="purity-value">{{ product.purity }}</span>
             </div>
 
             <!-- Actions -->
@@ -94,58 +81,21 @@
           <!-- Overview -->
           <div class="info-block">
             <h3 class="info-block-title">Product Overview</h3>
-            <p class="info-text">{{ product.description }}</p>
-            <p class="info-text">
-              {{ product.name }} is supplied as {{ product.specs && product.specs.form ? product.specs.form.toLowerCase() : 'a premium research-grade material' }},
-              packaged in sealed, tamper-evident vials to maintain stability during transport and storage.
-              Every batch is produced under strictly controlled conditions and accompanied by a detailed
-              Certificate of Analysis (COA) documenting identity, purity, and composition test results.
-            </p>
+            <template v-if="detailParagraphs.length">
+              <p v-for="(para, idx) in detailParagraphs" :key="idx" class="info-text">{{ para }}</p>
+            </template>
+            <p v-else class="info-text">{{ product.Introduction }}</p>
           </div>
 
           <!-- Specifications -->
-          <div class="info-block" v-if="product.specs && Object.keys(product.specs).length">
+          <div class="info-block" v-if="product.purity">
             <h3 class="info-block-title">Specifications</h3>
             <div class="specs-table">
-              <div v-for="(value, key) in product.specs" :key="key" class="spec-row">
-                <span class="spec-label">{{ formatSpecKey(key) }}</span>
-                <span class="spec-value">{{ value }}</span>
+              <div class="spec-row">
+                <span class="spec-label">Purity</span>
+                <span class="spec-value">{{ product.purity }}</span>
               </div>
             </div>
-          </div>
-
-          <!-- Packaging & Shipping -->
-          <div class="info-block">
-            <h3 class="info-block-title">Packaging &amp; Shipping</h3>
-            <ul class="info-list">
-              <li>Sealed sterile vials with tamper-evident caps, individually cushioned in protective foam</li>
-              <li>Discreet, reinforced outer packaging suitable for international transit</li>
-              <li>Temperature-appropriate packing (cold packs included for temperature-sensitive items)</li>
-              <li>Worldwide express delivery in 6-18 business days with full tracking number</li>
-              <li>One free reship guarantee on every order in case of customs or delivery issues</li>
-            </ul>
-          </div>
-
-          <!-- Storage & Handling -->
-          <div class="info-block">
-            <h3 class="info-block-title">Storage &amp; Handling</h3>
-            <ul class="info-list">
-              <li>Store as recommended in the specifications table above; keep the vial sealed until use</li>
-              <li>Protect from direct light, moisture, and repeated freeze-thaw cycles</li>
-              <li>Allow the vial to reach room temperature before opening to avoid condensation</li>
-              <li>Handle with appropriate laboratory protective equipment (gloves, lab coat, eye protection)</li>
-            </ul>
-          </div>
-
-          <!-- Quality Assurance -->
-          <div class="info-block">
-            <h3 class="info-block-title">Quality Assurance</h3>
-            <ul class="info-list">
-              <li>Every batch tested by independent third-party HPLC laboratories, purity above 99%</li>
-              <li>Certificate of Analysis (COA) and test reports included with every order</li>
-              <li>Full batch traceability from raw material sourcing to final packaging</li>
-              <li>Manufacturing follows GMP-compliant procedures for research materials</li>
-            </ul>
           </div>
 
           <!-- Closing divider -->
@@ -171,6 +121,14 @@
     </section>
   </div>
 
+  <!-- Loading -->
+  <div v-else-if="loading" class="section loading-state">
+    <div class="container" style="text-align:center;">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading...</p>
+    </div>
+  </div>
+
   <!-- Not Found -->
   <div v-else class="section not-found">
     <div class="container" style="text-align:center;">
@@ -184,51 +142,42 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { products, categories } from '../data/products'
+import { GetProduct } from '../api/product'
 
 export default {
   name: 'ProductDetail',
   components: { ProductCard },
   data() {
     return {
-      activeImageIndex: 0
+      products: [],
+      // 接口加载中，避免加载完成前误显示 Product Not Found
+      loading: true
     }
   },
   computed: {
     product() {
       const id = parseInt(this.$route.params.id)
-      return products.find(p => p.id === id) || null
-    },
-    activeImage() {
-      if (!this.product) return ''
-      return this.product.images[this.activeImageIndex] || this.product.images[0]
-    },
-    categoryName() {
-      if (!this.product) return ''
-      const cat = categories.find(c => c.id === this.product.category)
-      return cat ? cat.name : ''
+      return this.products.find(p => p.id === id) || null
     },
     relatedProducts() {
       if (!this.product) return []
-      return products
+      return this.products
         .filter(p => p.category === this.product.category && p.id !== this.product.id)
         .slice(0, 4)
+    },
+    // 接口返回的详情描述按段落拆分
+    detailParagraphs() {
+      if (!this.product || !this.product.details) return []
+      return this.product.details.split('\n').map(s => s.trim()).filter(Boolean)
     }
   },
-  watch: {
-    product: {
-      immediate: true,
-      handler(p) {
-        if (p) {
-          this.activeImageIndex = 0
-        }
-      }
-    }
-  },
-  methods: {
-    formatSpecKey(key) {
-      return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
-    }
+  created() {
+    // 从后端接口加载产品数据
+    GetProduct().then(res => {
+      this.products = res.productData || []
+    }).catch(() => {}).finally(() => {
+      this.loading = false
+    })
   }
 }
 </script>
@@ -497,22 +446,6 @@ export default {
   margin-bottom: 0;
 }
 
-.info-list {
-  padding-left: 20px;
-  list-style: disc;
-}
-
-.info-list li {
-  font-size: 0.92rem;
-  color: var(--text-secondary);
-  line-height: 1.75;
-  margin-bottom: 6px;
-}
-
-.info-list li:last-child {
-  margin-bottom: 0;
-}
-
 .info-divider {
   display: flex;
   align-items: center;
@@ -583,6 +516,33 @@ export default {
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   margin-top: 32px;
+}
+
+/* ===== Loading ===== */
+.loading-state {
+  padding-top: calc(var(--header-height) + 80px);
+  padding-bottom: 120px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== Responsive ===== */
@@ -715,10 +675,6 @@ export default {
   .info-text {
     font-size: 0.85rem;
     margin-bottom: 8px;
-  }
-
-  .info-list li {
-    font-size: 0.85rem;
   }
 
   .info-divider {

@@ -21,11 +21,18 @@
         <div class="filters-bar">
           <div class="filter-categories">
             <button
+              class="filter-btn"
+              :class="{ active: activeCategory === 'all' }"
+              @click="setCategory('all')"
+            >
+              All Products
+            </button>
+            <button
               v-for="cat in categories"
               :key="cat.id"
               class="filter-btn"
-              :class="{ active: activeCategory === cat.id }"
-              @click="setCategory(cat.id)"
+              :class="{ active: activeCategory === cat.name }"
+              @click="setCategory(cat.name)"
             >
               {{ cat.name }}
             </button>
@@ -45,9 +52,9 @@
         </div>
 
         <!-- Results Info -->
-        <div class="results-info">
+        <div v-if="!loading" class="results-info">
           <p class="results-count">
-            Showing <strong>{{ filteredProducts.length }}</strong> of <strong>{{ allProducts.length }}</strong> products
+            Showing <strong>{{ pageStart }}–{{ pageEnd }}</strong> of <strong>{{ filteredProducts.length }}</strong> products
           </p>
           <div class="sort-control">
             <label>Sort by:</label>
@@ -61,17 +68,36 @@
           </div>
         </div>
 
+        <!-- Loading -->
+        <div v-if="loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Loading...</p>
+        </div>
+
         <!-- Products Grid -->
-        <div v-if="filteredProducts.length" class="products-grid">
+        <div v-else-if="filteredProducts.length" class="products-grid">
           <ProductCard
-            v-for="product in filteredProducts"
+            v-for="product in pagedProducts"
             :key="product.id"
             :product="product"
           />
         </div>
 
-        <!-- Empty State -->
-        <div v-else class="empty-state">
+        <!-- Pagination -->
+        <div v-if="!loading && totalPages > 1" class="pagination">
+          <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">‹ Prev</button>
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            class="page-num"
+            :class="{ active: page === currentPage }"
+            @click="goToPage(page)"
+          >{{ page }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next ›</button>
+        </div>
+
+        <!-- Empty State（不能用 v-else，中间隔了分页栏会配对错元素） -->
+        <div v-if="!loading && !filteredProducts.length" class="empty-state">
           <div class="empty-icon">🔍</div>
           <h3>No products found</h3>
           <p>Try adjusting your search or filter criteria.</p>
@@ -84,25 +110,29 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { products, categories } from '../data/products'
+import { GetProduct } from '../api/product'
 
 export default {
   name: 'ProductsPage',
   components: { ProductCard },
   data() {
     return {
-      allProducts: products,
-      categories,
+      allProducts: [],
+      categories: [],
       activeCategory: 'all',
       searchQuery: '',
-      sortBy: 'default'
+      sortBy: 'default',
+      // 接口加载中，避免加载完成前误显示 No products found
+      loading: true,
+      currentPage: 1,
+      pageSize: 16
     }
   },
   computed: {
     filteredProducts() {
       let result = [...this.allProducts]
 
-      // Category filter
+      // Category filter（product.category 存储的是分类名称）
       if (this.activeCategory !== 'all') {
         result = result.filter(p => p.category === this.activeCategory)
       }
@@ -111,46 +141,92 @@ export default {
       if (this.searchQuery.trim()) {
         const q = this.searchQuery.toLowerCase().trim()
         result = result.filter(p =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          (p.specs && p.specs.purity && p.specs.purity.toLowerCase().includes(q))
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.Introduction || '').toLowerCase().includes(q) ||
+          (p.purity || '').toLowerCase().includes(q)
         )
       }
 
       // Sort
       switch (this.sortBy) {
         case 'name':
-          result.sort((a, b) => a.name.localeCompare(b.name))
+          result.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
           break
         case 'price-asc':
-          result.sort((a, b) => a.price - b.price)
+          result.sort((a, b) => this.minPrice(a) - this.minPrice(b))
           break
         case 'price-desc':
-          result.sort((a, b) => b.price - a.price)
+          result.sort((a, b) => this.minPrice(b) - this.minPrice(a))
           break
         case 'rating':
-          result.sort((a, b) => b.rating - a.rating)
+          result.sort((a, b) => Number(b.level) - Number(a.level))
           break
       }
 
       return result
+    },
+    // 总页数
+    totalPages() {
+      return Math.ceil(this.filteredProducts.length / this.pageSize)
+    },
+    // 当前页的产品列表
+    pagedProducts() {
+      const start = (this.currentPage - 1) * this.pageSize
+      return this.filteredProducts.slice(start, start + this.pageSize)
+    },
+    // 当前页显示区间（用于 Showing x–y）
+    pageStart() {
+      if (!this.filteredProducts.length) return 0
+      return (this.currentPage - 1) * this.pageSize + 1
+    },
+    pageEnd() {
+      return Math.min(this.currentPage * this.pageSize, this.filteredProducts.length)
+    }
+  },
+  watch: {
+    // 筛选、搜索、排序变化时回到第一页
+    activeCategory() {
+      this.currentPage = 1
+    },
+    searchQuery() {
+      this.currentPage = 1
+    },
+    sortBy() {
+      this.currentPage = 1
     }
   },
   created() {
-    // Read category from query params
     const cat = this.$route.query.category
-    if (cat && categories.find(c => c.id === cat)) {
-      this.activeCategory = cat
-    }
+    // 从后端接口加载产品与分类数据
+    GetProduct().then(res => {
+      this.allProducts = res.productData || []
+      this.categories = res.categoryData || []
+      // Read category from query params
+      if (cat && this.categories.find(c => c.name === cat)) {
+        this.activeCategory = cat
+      }
+    }).catch(() => {}).finally(() => {
+      this.loading = false
+    })
   },
   methods: {
-    setCategory(id) {
-      this.activeCategory = id
+    goToPage(page) {
+      if (page < 1 || page > this.totalPages) return
+      this.currentPage = page
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
+    // 从价格字符串（如 "$41.00 – $145.00"）中提取最低价用于排序
+    minPrice(product) {
+      const match = String(product.price || '').match(/\d+(?:\.\d+)?/)
+      return match ? parseFloat(match[0]) : 0
+    },
+    setCategory(name) {
+      this.activeCategory = name
       // Update URL query without navigation
-      if (id === 'all') {
+      if (name === 'all') {
         this.$router.replace({ query: {} }).catch(() => {})
       } else {
-        this.$router.replace({ query: { category: id } }).catch(() => {})
+        this.$router.replace({ query: { category: name } }).catch(() => {})
       }
     },
     resetFilters() {
@@ -368,6 +444,81 @@ export default {
   margin-bottom: 24px;
 }
 
+/* ===== Loading ===== */
+.loading-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Pagination ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.page-num,
+.page-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.page-num:hover,
+.page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-num.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 压缩区块上下内边距，减少横幅与筛选栏、分页与页脚之间的空白 */
+.products-section {
+  padding-top: 32px;
+  padding-bottom: 40px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1023px) {
   .page-header { height: 260px; }
@@ -390,6 +541,7 @@ export default {
 
   .products-section {
     padding-top: 20px;
+    padding-bottom: 24px;
   }
 
   .filters-bar {
@@ -447,6 +599,19 @@ export default {
 
   .empty-icon {
     font-size: 3rem;
+  }
+
+  .pagination {
+    gap: 6px;
+    margin-top: 24px;
+  }
+
+  .page-num,
+  .page-btn {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 0.82rem;
   }
 }
 </style>

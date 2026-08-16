@@ -629,6 +629,13 @@ a.info-value:hover {
   padding-bottom: 0;
 }
 
+/* 压缩各区块上下内边距，减少衔接处空白 */
+.contact-section,
+.faq-section {
+  padding-top: 36px;
+  padding-bottom: 36px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1023px) {
   .page-header { height: 260px; }
@@ -647,6 +654,12 @@ a.info-value:hover {
 
   .contact-section {
     padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .faq-section {
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
 
   .form-row {

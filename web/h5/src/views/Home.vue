@@ -189,7 +189,8 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { products, banners } from '@/data/products'
+import { banners } from '@/data/products'
+import { GetProduct } from '../api/product'
 
 export default {
   name: 'HomePage',
@@ -197,6 +198,7 @@ export default {
   data() {
     return {
       banners,
+      products: [],
       currentSlide: 0,
       slideInterval: null,
       advantages: [
@@ -241,8 +243,14 @@ export default {
   },
   computed: {
     featuredProducts() {
-      return products.filter(p => p.featured).slice(0, 8)
+      return this.products.slice(0, 8)
     }
+  },
+  created() {
+    // 从后端接口加载产品数据
+    GetProduct().then(res => {
+      this.products = res.productData || []
+    }).catch(() => {})
   },
   mounted() {
     this.startAutoSlide()
@@ -402,6 +410,9 @@ export default {
 /* ===== Intro Section ===== */
 .intro-section {
   background: var(--bg-white);
+  padding-top: 32px;
+  /* 底部预留徽章（bottom: -20px）溢出空间 */
+  padding-bottom: 40px;
 }
 
 .intro-grid {
@@ -513,6 +524,8 @@ export default {
 /* ===== Products Section ===== */
 .products-section {
   background: var(--bg-light);
+  padding-top: 36px;
+  padding-bottom: 32px;
 }
 
 .products-grid {
@@ -529,6 +542,7 @@ export default {
 /* ===== Advantages Section ===== */
 .advantages-section {
   background: var(--bg-white);
+  padding-top: 36px;
 }
 
 .advantages-grid {
@@ -720,6 +734,21 @@ export default {
   .cta-buttons {
     flex-direction: column;
     align-items: center;
+  }
+
+  /* 压缩各区块上下内边距，减少衔接处空白 */
+  .intro-section {
+    padding-top: 20px;
+    padding-bottom: 28px;
+  }
+
+  .products-section {
+    padding-top: 24px;
+    padding-bottom: 20px;
+  }
+
+  .advantages-section {
+    padding-top: 24px;
   }
 }
 </style>
