@@ -46,7 +46,7 @@ import {EventBus} from "@/utils/event-bus";
 export default {
   data() {
     return {
-      avatar: '/static/avatar.jpg',
+      avatar: './static/avatar.jpg',
       account: localStorage.getItem("account"),
       menuList: [
         {path: '/product', title: '产品', icon: 'el-icon-goods'},
