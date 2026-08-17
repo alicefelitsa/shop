@@ -105,7 +105,8 @@
     </el-card>
 
     <!--查看留言详情-->
-    <el-dialog title="留言详情" :visible.sync="dialogVisible" width="900px" custom-class="message-detail-dialog">
+    <el-dialog title="留言详情" :close-on-click-modal="false" :visible.sync="dialogVisible" width="900px"
+               custom-class="message-detail-dialog">
       <el-descriptions v-if="viewData.id" :column="2" border>
         <el-descriptions-item label="姓名:">{{ viewData.name }}</el-descriptions-item>
         <el-descriptions-item label="邮箱:">{{ viewData.email }}</el-descriptions-item>
