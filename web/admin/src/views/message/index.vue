@@ -105,15 +105,15 @@
     </el-card>
 
     <!--查看留言详情-->
-    <el-dialog title="留言详情" :visible.sync="dialogVisible" width="600px">
-      <el-descriptions v-if="viewData.id" :column="2" border size="small">
-        <el-descriptions-item label="姓名">{{ viewData.name }}</el-descriptions-item>
-        <el-descriptions-item label="邮箱">{{ viewData.email }}</el-descriptions-item>
-        <el-descriptions-item label="主题">{{ subjectLabel(viewData.subject) }}</el-descriptions-item>
-        <el-descriptions-item label="时间">{{ viewData.ctime }}</el-descriptions-item>
-        <el-descriptions-item label="IP">{{ viewData.ip }}</el-descriptions-item>
-        <el-descriptions-item label="IP地址">{{ viewData.ip_address }}</el-descriptions-item>
-        <el-descriptions-item label="留言内容" :span="2">
+    <el-dialog title="留言详情" :visible.sync="dialogVisible" width="900px" custom-class="message-detail-dialog">
+      <el-descriptions v-if="viewData.id" :column="2" border>
+        <el-descriptions-item label="姓名:">{{ viewData.name }}</el-descriptions-item>
+        <el-descriptions-item label="邮箱:">{{ viewData.email }}</el-descriptions-item>
+        <el-descriptions-item label="主题:">{{ subjectLabel(viewData.subject) }}</el-descriptions-item>
+        <el-descriptions-item label="时间:">{{ viewData.ctime }}</el-descriptions-item>
+        <el-descriptions-item label="IP:">{{ viewData.ip }}</el-descriptions-item>
+        <el-descriptions-item label="IP地址:">{{ viewData.ip_address }}</el-descriptions-item>
+        <el-descriptions-item label="留言内容:" :span="2">
           <div style="white-space: pre-wrap;">{{ viewData.content }}</div>
         </el-descriptions-item>
       </el-descriptions>
@@ -253,3 +253,24 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* 留言详情弹窗：表格内容统一 14px 微软雅黑 */
+::v-deep .message-detail-dialog .el-descriptions-item__label,
+::v-deep .message-detail-dialog .el-descriptions-item__content {
+  font-size: 14px;
+  font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+}
+
+/* 标签列不换行，宽度随内容自适应，文字右对齐 */
+::v-deep .message-detail-dialog .el-descriptions-item__label {
+  white-space: nowrap;
+  width: 1px;
+  text-align: right;
+}
+
+/* 弹窗内容区域内边距 */
+::v-deep .message-detail-dialog .el-dialog__body {
+  padding: 20px 20px !important;
+}
+</style>
