@@ -8,16 +8,28 @@ import {Message} from "element-ui";
 const service = axios.create({
     baseURL: apiUrl,
     timeout: 30000,
-    /*headers: {
-        'Content-Type': 'multipart/form-data'
-    },*/
 });
+
+/**
+ * 清除登录状态并跳转登录页
+ */
+function clearLoginState() {
+    localStorage.removeItem('token');
+    localStorage.removeItem("account");
+    if (router.currentRoute.path !== '/login') {
+        router.push({path: '/login'});
+    }
+}
 
 /**
  * 添加请求拦截器
  */
 service.interceptors.request.use(request => {
-        request.headers['Authorization'] = localStorage.getItem("token");
+        // 仅在已登录时携带 token，避免发送 "null" 字符串
+        const token = localStorage.getItem("token");
+        if (token) {
+            request.headers['Authorization'] = token;
+        }
         return request;
     }, (error) => {
         return Promise.reject(error);
@@ -28,17 +40,16 @@ service.interceptors.request.use(request => {
  * 添加响应拦截器
  */
 service.interceptors.response.use(response => {
-        // 登录过期处理
+        // 登录过期处理（业务状态码）
         if (response.data?.code === 401) {
-            localStorage.removeItem('token')
-            localStorage.removeItem('avatar')
-            localStorage.removeItem("account");
-            if (router.currentRoute.path !== '/login') {
-                router.push({path: '/login'});
-            }
+            clearLoginState();
         }
         return response;
     }, (error) => {
+        // 登录过期处理（HTTP 状态码）
+        if (error.response && error.response.status === 401) {
+            clearLoginState();
+        }
         if (!error.response) {
             if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
                 Message.error('请求超时，请检查网络连接');

@@ -159,12 +159,6 @@
       </div>
     </div>
 
-    <!-- 底部信息 -->
-    <div class="global-footer">
-      <p>© 2026 企业服务系统 版本 1.0.0</p>
-      <!--      <p>服务热线: 400-888-8888 | 技术支持: support@example.com</p>-->
-    </div>
-
     <!-- 帮助弹窗 -->
     <el-dialog
         title="需要帮助？"
@@ -672,21 +666,6 @@ export default {
 
 .agreement p {
   margin: 0;
-}
-
-/* 全局页脚 */
-.global-footer {
-  margin-top: 30px;
-  text-align: center;
-  color: #666;
-  font-size: 12px;
-  line-height: 1.8;
-  z-index: 1;
-  padding: 20px;
-}
-
-.global-footer p {
-  margin: 5px 0;
 }
 
 /* 帮助弹窗内容 */

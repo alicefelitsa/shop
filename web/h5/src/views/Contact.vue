@@ -25,7 +25,7 @@
               Fill out the form below and we'll get back to you within 4-5 hours.
             </p>
 
-            <form class="contact-form" @submit.prevent="submitForm">
+            <form class="contact-form" novalidate @submit.prevent="submitForm">
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Full Name <span class="required">*</span></label>
@@ -33,9 +33,16 @@
                     v-model="form.name"
                     type="text"
                     class="form-input"
+                    :class="{ 'is-invalid': errors.name }"
                     placeholder="Your full name"
-                    required
+                    @input="clearError('name')"
                   />
+                  <transition name="fade-in">
+                    <p v-if="errors.name" class="field-error">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                      {{ errors.name }}
+                    </p>
+                  </transition>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Email Address <span class="required">*</span></label>
@@ -43,15 +50,27 @@
                     v-model="form.email"
                     type="email"
                     class="form-input"
+                    :class="{ 'is-invalid': errors.email }"
                     placeholder="your@email.com"
-                    required
+                    @input="clearError('email')"
                   />
+                  <transition name="fade-in">
+                    <p v-if="errors.email" class="field-error">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                      {{ errors.email }}
+                    </p>
+                  </transition>
                 </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label">Subject <span class="required">*</span></label>
-                <select v-model="form.subject" class="form-input form-select" required>
+                <select
+                  v-model="form.subject"
+                  class="form-input form-select"
+                  :class="{ 'is-invalid': errors.subject }"
+                  @change="clearError('subject')"
+                >
                   <option value="" disabled>Select a subject</option>
                   <option value="general">General Inquiry</option>
                   <option value="order">Order Inquiry</option>
@@ -60,6 +79,12 @@
                   <option value="partnership">Partnership</option>
                   <option value="other">Other</option>
                 </select>
+                <transition name="fade-in">
+                  <p v-if="errors.subject" class="field-error">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    {{ errors.subject }}
+                  </p>
+                </transition>
               </div>
 
               <div class="form-group">
@@ -67,10 +92,17 @@
                 <textarea
                   v-model="form.message"
                   class="form-input form-textarea"
+                  :class="{ 'is-invalid': errors.message }"
                   placeholder="Please tell us how we can help you, and leave your contact information so we can assist you as soon as possible..."
                   rows="6"
-                  required
+                  @input="clearError('message')"
                 ></textarea>
+                <transition name="fade-in">
+                  <p v-if="errors.message" class="field-error">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    {{ errors.message }}
+                  </p>
+                </transition>
               </div>
 
               <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="submitting">
@@ -80,13 +112,6 @@
                 </span>
                 <span v-else>Sending...</span>
               </button>
-
-              <transition name="fade-in">
-                <div v-if="formSuccess" class="form-success">
-                  <span class="success-icon">✅</span>
-                  <p>Your message has been sent successfully! We'll respond within 4-5 hours.</p>
-                </div>
-              </transition>
             </form>
           </div>
 
@@ -104,7 +129,7 @@
                   <div class="info-icon">📧</div>
                   <div class="info-content">
                     <span class="info-label">Email</span>
-                    <a href="mailto:info@hkroids.com" class="info-value">info@hkroids.com</a>
+                    <a :href="'mailto:' + contactInfo.email" class="info-value">{{ contactInfo.email }}</a>
                   </div>
                 </div>
 
@@ -112,7 +137,7 @@
                   <div class="info-icon">📞</div>
                   <div class="info-content">
                     <span class="info-label">Phone</span>
-                    <a href="tel:+1234567890" class="info-value">+1 (234) 567-890</a>
+                    <a :href="phoneHref" class="info-value">{{ contactInfo.phone }}</a>
                   </div>
                 </div>
 
@@ -120,7 +145,7 @@
                   <div class="info-icon">📍</div>
                   <div class="info-content">
                     <span class="info-label">Address</span>
-                    <span class="info-value">Hong Kong, China</span>
+                    <span class="info-value">{{ contactInfo.address }}</span>
                   </div>
                 </div>
 
@@ -128,7 +153,7 @@
                   <div class="info-icon">🕐</div>
                   <div class="info-content">
                     <span class="info-label">Business Hours</span>
-                    <span class="info-value">Mon – Sat: 9:00 AM – 6:00 PM</span>
+                    <span class="info-value">{{ contactInfo.business_hours }}</span>
                   </div>
                 </div>
               </div>
@@ -205,14 +230,42 @@
         </div>
       </div>
     </section>
+
+    <!-- 提交结果弹窗 -->
+    <transition name="modal">
+      <div v-if="resultModal.show" class="modal-overlay" @click.self="closeResultModal">
+        <div class="modal-card">
+          <button type="button" class="modal-close" aria-label="Close" @click="closeResultModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+          <div class="modal-icon" :class="resultModal.type">
+            <svg v-if="resultModal.type === 'success'" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg v-else width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 7v6"/><path d="M12 16.5v.5"/></svg>
+          </div>
+          <h3 class="modal-title">{{ resultModal.type === 'success' ? 'Message Sent!' : 'Submission Failed' }}</h3>
+          <p class="modal-text">{{ resultModal.text }}</p>
+          <button type="button" class="btn btn-primary modal-btn" @click="closeResultModal">OK</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script>
+import {AddMessage} from '@/api/message'
+import {GetContactInfo} from '@/api/contact'
+
 export default {
   name: 'ContactPage',
   data() {
     return {
+      // 联系方式，默认值兼容接口未返回的场景，后台可配置
+      contactInfo: {
+        email: 'info@hkroids.com',
+        phone: '+1 (234) 567-890',
+        address: 'Hong Kong, China',
+        business_hours: 'Mon – Sat: 9:00 AM – 6:00 PM'
+      },
       form: {
         name: '',
         email: '',
@@ -220,7 +273,19 @@ export default {
         message: ''
       },
       submitting: false,
-      formSuccess: false,
+      // 提交结果弹窗：type 为 success / error
+      resultModal: {
+        show: false,
+        type: 'success',
+        text: ''
+      },
+      // 各字段校验错误提示
+      errors: {
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+      },
       openFaq: null,
       faqs: [
         {
@@ -250,22 +315,79 @@ export default {
       ]
     }
   },
+  computed: {
+    // 电话拨打链接：去掉非数字字符
+    phoneHref() {
+      return 'tel:' + (this.contactInfo.phone || '').replace(/[^\d+]/g, '')
+    }
+  },
+  created() {
+    // 从后台加载联系方式配置
+    this.fetchContactInfo()
+  },
   methods: {
+    // 加载联系方式配置，失败时保留默认值
+    fetchContactInfo() {
+      GetContactInfo().then(list => {
+        if (list && list.length) {
+          this.contactInfo = {...this.contactInfo, ...list[0]}
+        }
+      }).catch(() => {
+      })
+    },
+    // 表单校验，不通过时在对应字段下方显示提示
+    validateForm() {
+      this.errors = { name: '', email: '', subject: '', message: '' }
+      if (!this.form.name.trim()) {
+        this.errors.name = 'Please enter your full name'
+      }
+      if (!this.form.email.trim()) {
+        this.errors.email = 'Please enter your email address'
+      } else if (!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(this.form.email.trim())) {
+        this.errors.email = 'Please enter a valid email address'
+      }
+      if (!this.form.subject) {
+        this.errors.subject = 'Please select a subject'
+      }
+      if (!this.form.message.trim()) {
+        this.errors.message = 'Please enter your message'
+      }
+      return !Object.values(this.errors).some(Boolean)
+    },
+    // 用户修改字段时清除该字段的错误提示
+    clearError(field) {
+      if (this.errors[field]) {
+        this.errors[field] = ''
+      }
+    },
     async submitForm() {
+      if (!this.validateForm()) {
+        return
+      }
       this.submitting = true
-      this.formSuccess = false
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      this.submitting = false
-      this.formSuccess = true
-      this.form = { name: '', email: '', subject: '', message: '' }
-
-      // Auto-hide success message
-      setTimeout(() => {
-        this.formSuccess = false
-      }, 5000)
+      try {
+        // 提交留言到后端，存入 message 表
+        await AddMessage({
+          name: this.form.name,
+          email: this.form.email,
+          subject: this.form.subject,
+          content: this.form.message
+        })
+        this.showResultModal('success', "Your message has been sent successfully! We'll respond within 4-5 hours.")
+        this.form = { name: '', email: '', subject: '', message: '' }
+      } catch (e) {
+        this.showResultModal('error', e.message || 'Submission failed, please try again later.')
+      } finally {
+        this.submitting = false
+      }
+    },
+    // 弹出提交结果弹窗
+    showResultModal(type, text) {
+      this.resultModal = { show: true, type, text }
+    },
+    // 关闭提交结果弹窗
+    closeResultModal() {
+      this.resultModal.show = false
     },
     toggleFaq(idx) {
       this.openFaq = this.openFaq === idx ? null : idx
@@ -414,25 +536,150 @@ export default {
   cursor: not-allowed;
 }
 
-.form-success {
+/* ===== 提交结果弹窗 ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  background: rgba(56, 161, 105, 0.08);
-  border: 1px solid rgba(56, 161, 105, 0.2);
-  border-radius: var(--radius-sm);
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 36, 64, 0.5);
+  backdrop-filter: blur(4px);
 }
 
-.success-icon {
-  font-size: 1.4rem;
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 44px 32px 32px;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(15, 36, 64, 0.25);
+  text-align: center;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--bg-gray);
+  color: var(--text-primary);
+}
+
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+}
+
+.modal-icon.success {
+  background: rgba(56, 161, 105, 0.12);
+  color: var(--success);
+  box-shadow: 0 0 0 10px rgba(56, 161, 105, 0.06);
+}
+
+.modal-icon.error {
+  background: rgba(229, 62, 62, 0.1);
+  color: var(--danger);
+  box-shadow: 0 0 0 10px rgba(229, 62, 62, 0.06);
+}
+
+.modal-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.modal-text {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+
+.modal-btn {
+  min-width: 160px;
+}
+
+/* 弹窗出入场动画 */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.modal-enter-active .modal-card,
+.modal-leave-active .modal-card {
+  transition: transform 0.25s ease;
+}
+
+.modal-enter,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter .modal-card {
+  transform: scale(0.9) translateY(12px);
+}
+
+.modal-leave-to .modal-card {
+  transform: scale(0.95);
+}
+
+/* 字段校验错误提示 */
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.84rem;
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.field-error svg {
   flex-shrink: 0;
 }
 
-.form-success p {
-  font-size: 0.92rem;
-  color: var(--success);
-  font-weight: 500;
+.form-input.is-invalid {
+  border-color: var(--danger);
+}
+
+.form-input.is-invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+}
+
+/* 提示淡入淡出动画 */
+.fade-in-enter-active,
+.fade-in-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.fade-in-enter,
+.fade-in-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 /* ===== Contact Info Cards ===== */

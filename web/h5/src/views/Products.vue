@@ -2,7 +2,8 @@
   <div class="products-page">
     <!-- Page Header -->
     <section class="page-header">
-      <div class="page-header-bg" style="background-image: url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1920&h=500&fit=crop')"></div>
+      <div class="page-header-bg"
+           style="background-image: url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1920&h=500&fit=crop')"></div>
       <div class="page-header-overlay"></div>
       <div class="container page-header-content">
         <h1 class="page-title">Our Products</h1>
@@ -21,31 +22,33 @@
         <div class="filters-bar">
           <div class="filter-categories">
             <button
-              class="filter-btn"
-              :class="{ active: activeCategory === 'all' }"
-              @click="setCategory('all')"
+                class="filter-btn"
+                :class="{ active: activeCategory === 'all' }"
+                @click="setCategory('all')"
             >
               All Products
             </button>
             <button
-              v-for="cat in categories"
-              :key="cat.id"
-              class="filter-btn"
-              :class="{ active: activeCategory === cat.name }"
-              @click="setCategory(cat.name)"
+                v-for="cat in categories"
+                :key="cat.id"
+                class="filter-btn"
+                :class="{ active: activeCategory === cat.name }"
+                @click="setCategory(cat.name)"
             >
               {{ cat.name }}
             </button>
           </div>
           <div class="filter-search">
-            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
             </svg>
             <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search products..."
-              class="search-input"
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search products..."
+                class="search-input"
             />
             <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">✕</button>
           </div>
@@ -54,7 +57,8 @@
         <!-- Results Info -->
         <div v-if="!loading" class="results-info">
           <p class="results-count">
-            Showing <strong>{{ pageStart }}–{{ pageEnd }}</strong> of <strong>{{ filteredProducts.length }}</strong> products
+            Showing <strong>{{ pageStart }}–{{ pageEnd }}</strong> of <strong>{{ filteredProducts.length }}</strong>
+            products
           </p>
           <div class="sort-control">
             <label>Sort by:</label>
@@ -77,9 +81,9 @@
         <!-- Products Grid -->
         <div v-else-if="filteredProducts.length" class="products-grid">
           <ProductCard
-            v-for="product in pagedProducts"
-            :key="product.id"
-            :product="product"
+              v-for="product in pagedProducts"
+              :key="product.id"
+              :product="product"
           />
         </div>
 
@@ -87,13 +91,15 @@
         <div v-if="!loading && totalPages > 1" class="pagination">
           <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">‹ Prev</button>
           <button
-            v-for="page in totalPages"
-            :key="page"
-            class="page-num"
-            :class="{ active: page === currentPage }"
-            @click="goToPage(page)"
-          >{{ page }}</button>
-          <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next ›</button>
+              v-for="page in totalPages"
+              :key="page"
+              class="page-num"
+              :class="{ active: page === currentPage }"
+              @click="goToPage(page)"
+          >{{ page }}
+          </button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next ›
+          </button>
         </div>
 
         <!-- Empty State（不能用 v-else，中间隔了分页栏会配对错元素） -->
@@ -110,11 +116,11 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { GetProduct } from '../api/product'
+import {GetProduct} from '@/api/product'
 
 export default {
   name: 'ProductsPage',
-  components: { ProductCard },
+  components: {ProductCard},
   data() {
     return {
       allProducts: [],
@@ -141,9 +147,9 @@ export default {
       if (this.searchQuery.trim()) {
         const q = this.searchQuery.toLowerCase().trim()
         result = result.filter(p =>
-          (p.name || '').toLowerCase().includes(q) ||
-          (p.Introduction || '').toLowerCase().includes(q) ||
-          (p.purity || '').toLowerCase().includes(q)
+            (p.name || '').toLowerCase().includes(q) ||
+            (p.Introduction || '').toLowerCase().includes(q) ||
+            (p.purity || '').toLowerCase().includes(q)
         )
       }
 
@@ -205,7 +211,8 @@ export default {
       if (cat && this.categories.find(c => c.name === cat)) {
         this.activeCategory = cat
       }
-    }).catch(() => {}).finally(() => {
+    }).catch(() => {
+    }).finally(() => {
       this.loading = false
     })
   },
@@ -213,7 +220,7 @@ export default {
     goToPage(page) {
       if (page < 1 || page > this.totalPages) return
       this.currentPage = page
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      window.scrollTo({top: 0, behavior: 'smooth'})
     },
     // 从价格字符串（如 "$41.00 – $145.00"）中提取最低价用于排序
     minPrice(product) {
@@ -224,16 +231,19 @@ export default {
       this.activeCategory = name
       // Update URL query without navigation
       if (name === 'all') {
-        this.$router.replace({ query: {} }).catch(() => {})
+        this.$router.replace({query: {}}).catch(() => {
+        })
       } else {
-        this.$router.replace({ query: { category: name } }).catch(() => {})
+        this.$router.replace({query: {category: name}}).catch(() => {
+        })
       }
     },
     resetFilters() {
       this.activeCategory = 'all'
       this.searchQuery = ''
       this.sortBy = 'default'
-      this.$router.replace({ query: {} }).catch(() => {})
+      this.$router.replace({query: {}}).catch(() => {
+      })
     }
   }
 }
@@ -521,8 +531,13 @@ export default {
 
 /* ===== Responsive ===== */
 @media (max-width: 1023px) {
-  .page-header { height: 260px; }
-  .page-title { font-size: 2.2rem; }
+  .page-header {
+    height: 260px;
+  }
+
+  .page-title {
+    font-size: 2.2rem;
+  }
 
   .products-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -534,10 +549,23 @@ export default {
 }
 
 @media (max-width: 767px) {
-  .page-header { height: 160px; padding-top: var(--header-height); }
-  .page-title { font-size: 1.5rem; margin-bottom: 6px; }
-  .page-breadcrumb { font-size: 0.82rem; }
-  .page-header-content { padding-top: 0; }
+  .page-header {
+    height: 160px;
+    padding-top: var(--header-height);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+  }
+
+  .page-breadcrumb {
+    font-size: 0.82rem;
+  }
+
+  .page-header-content {
+    padding-top: 0;
+  }
 
   .products-section {
     padding-top: 20px;

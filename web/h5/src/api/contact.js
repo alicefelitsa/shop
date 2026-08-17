@@ -1,7 +1,8 @@
 import request from '@/api/request';
 
-export async function getQrcodeUrl(ucode) {
-    const res = await request.get('/getQrcodeUrl?ucode=' + ucode);
+//获取联系方式配置
+export async function GetContactInfo() {
+    const res = await request.get('/GetContactInfo');
     if (res.data.code === 0) {
         return res.data.data;
     }

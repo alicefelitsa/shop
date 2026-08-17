@@ -13,61 +13,37 @@ const routes = [
     {
         path: '/',
         component: () => import('@/layout/index'),
-        redirect: '/movie/index',
+        redirect: '/product',
         children: [
             {
-                path: '/movie/index',
-                name: 'movie',
-                component: () => import('@/views/movie/index'),
-                meta: {title: '影片列表'}
+                path: 'message',
+                name: 'message',
+                component: () => import('@/views/message/index'),
+                meta: {title: '留言'}
             },
-            // {
-            //     path: 'chat',
-            //     name: 'chat',
-            //     component: () => import('@/views/chat'),
-            //     meta: {title: '消息'}
-            // },
-            // {
-            //     path: 'qr',
-            //     name: 'qr',
-            //     component: () => import('@/views/qr'),
-            //     meta: {title: '二维码'}
-            // },
             {
-                path: 'user',
-                name: 'user',
-                component: () => import('@/views/user'),
-                meta: {title: '用户'}
+                path: 'product',
+                name: 'product',
+                component: () => import('@/views/product/index'),
+                meta: {title: '产品列表'}
             },
-            // {
-            //     path: 'greet',
-            //     name: 'greet',
-            //     component: () => import('@/views/greet'),
-            //     meta: {title: '打招呼'}
-            // },
-            // {
-            //     path: 'answer',
-            //     name: 'answer',
-            //     component: () => import('@/views/answer'),
-            //     meta: {title: '智能回复'}
-            // },
             {
-                path: 'statistic',
-                name: 'statistic',
-                component: () => import('@/views/statistic'),
-                meta: {title: '统计'}
+                path: 'category',
+                name: 'category',
+                component: () => import('@/views/category/index'),
+                meta: {title: '分类'}
+            },
+            {
+                path: 'contact',
+                name: 'contact',
+                component: () => import('@/views/contact/index'),
+                meta: {title: '联系方式'}
             },
             {
                 path: 'setting',
                 name: 'setting',
                 component: () => import('@/views/setting'),
                 meta: {title: '设置'}
-            },
-            {
-                path: 'logs',
-                name: 'logs',
-                component: () => import('@/views/logs'),
-                meta: {title: '日志'}
             },
         ]
     },

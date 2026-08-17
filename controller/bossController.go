@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"shop/config"
 	"shop/function"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -17,10 +17,8 @@ import (
 // AdminLogin 管理员登录
 func AdminLogin(c *gin.Context) {
 	var code int
-	var avatar string
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	_ = config.Mysql.QueryRow("select avatar from config").Scan(&avatar)
 	resData, err := config.MysqlQuery("select id from admin where account = ? && password = ?", data["account"], data["password"])
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
@@ -40,7 +38,6 @@ func AdminLogin(c *gin.Context) {
 		"code":    code,
 		"message": "登录成功",
 		"token":   token,
-		"avatar":  avatar,
 		"account": data["account"],
 	})
 }
@@ -116,49 +113,85 @@ func AuthUser(c *gin.Context) {
 	})
 }
 
-// GetMovie 获取视频
-func GetMovie(c *gin.Context) {
+// GetMessage 获取客户留言列表
+func GetMessage(c *gin.Context) {
 	var code, count int
 	var where string
-	title := c.Query("title")
-	category := c.Query("category")
-	region := c.Query("region")
-	year := c.Query("year")
-	format := c.Query("format")
-	if title != "" {
-		where += fmt.Sprintf("title like '%%%v%%' && ", title)
+	name := c.Query("name")
+	email := c.Query("email")
+	subject := c.Query("subject")
+	if name != "" {
+		where += fmt.Sprintf("name like '%%%v%%' && ", name)
 	}
-	if category != "" {
-		where += fmt.Sprintf("category like '%%%v%%' && ", category)
+	if email != "" {
+		where += fmt.Sprintf("email like '%%%v%%' && ", email)
 	}
-	if region != "" {
-		where += fmt.Sprintf("region like '%%%v%%' && ", region)
-	}
-	if year != "" {
-		where += fmt.Sprintf("year like '%%%v%%' && ", year)
-	}
-	if format != "" {
-		where += fmt.Sprintf("format like '%%%v%%' && ", format)
+	if subject != "" {
+		where += fmt.Sprintf("subject like '%%%v%%' && ", subject)
 	}
 	if where != "" {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
 	}
-	fmt.Println(where)
-	data, err := config.MysqlQuery("select * from video" + where + " order by id desc" + config.PageLimit(c))
+	data, err := config.MysqlQuery("select * from message" + where + " order by id desc" + config.PageLimit(c))
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
-	err = config.Mysql.QueryRow("select count(id) from video" + where).Scan(&count)
+	err = config.Mysql.QueryRow("select count(id) from message" + where).Scan(&count)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
 	}
-	var playUri string
-	_ = config.Mysql.QueryRow("select play_uri from config").Scan(&playUri)
+	c.JSON(http.StatusOK, gin.H{
+		"code":    code,
+		"message": "操作成功",
+		"count":   count,
+		"data":    data,
+	})
+}
+
+// DelMessage 删除客户留言
+func DelMessage(c *gin.Context) {
+	ids := c.Query("ids")
+	exec, _ := config.Mysql.Exec("delete from message where id " + "in(" + ids + ")")
+	affected, _ := exec.RowsAffected()
+	if affected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
+}
+
+// GetProductList 获取产品列表
+func GetProductList(c *gin.Context) {
+	var code, count int
+	var where string
+	name := c.Query("name")
+	category := c.Query("category")
+	if name != "" {
+		where += fmt.Sprintf("name like '%%%v%%' && ", name)
+	}
+	if category != "" {
+		where += fmt.Sprintf("category like '%%%v%%' && ", category)
+	}
+	if where != "" {
+		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
+	}
+	data, err := config.MysqlQuery("select * from product" + where + " order by id desc" + config.PageLimit(c))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	err = config.Mysql.QueryRow("select count(id) from product" + where).Scan(&count)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
+		return
+	}
 	if len(data) > 0 {
+		var domain string
+		_ = config.Mysql.QueryRow("select domain from config").Scan(&domain)
 		for k, val := range data {
-			data[k]["cover"] = playUri + val["play_url"].(string) + "cover.png"
+			data[k]["album"] = domain + val["album"].(string)
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -169,13 +202,46 @@ func GetMovie(c *gin.Context) {
 	})
 }
 
-// AddMovie 添加影片
-func AddMovie(c *gin.Context) {
+// trimAlbumDomain 去掉图册地址中的平台域名前缀，避免保存时重复拼接
+func trimAlbumDomain(album string) string {
+	var domain string
+	_ = config.Mysql.QueryRow("select domain from config").Scan(&domain)
+	if domain != "" {
+		album = strings.TrimPrefix(album, domain)
+	}
+	return album
+}
+
+// UploadImage 上传图片
+func UploadImage(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "获取上传文件失败"})
+		return
+	}
+	if !function.IsFileExist("./upload") {
+		_ = os.Mkdir("./upload", 0777)
+	}
+	ok, _, _, fileAddress := function.SaveImageFile(c, "./upload", file)
+	if !ok {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "上传失败，仅支持png/jpg/gif/jpeg图片"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "操作成功",
+		"url":     "/upload" + fileAddress,
+	})
+}
+
+// AddProduct 添加产品
+func AddProduct(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
+	album, _ := data["album"].(string)
 	timer := time.Now().Format("2006-01-02 15:04:05")
-	exec, _ := config.Mysql.Exec(`insert into video (title,score,category,region,year,plot,format,play_url,director,episode,ctime) values (?,?,?,?,?,?,?,?,?,?,?)`,
-		data["title"], data["score"], data["category"], data["region"], data["year"], data["plot"], data["format"], data["play_url"], data["director"], data["episode"], timer)
+	exec, _ := config.Mysql.Exec(`insert into product (name,price,level,category,Introduction,purity,album,details,ctime) values (?,?,?,?,?,?,?,?,?)`,
+		data["name"], data["price"], data["level"], data["category"], data["Introduction"], data["purity"], trimAlbumDomain(album), data["details"], timer)
 	id, _ := exec.LastInsertId()
 	if id > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
@@ -184,12 +250,13 @@ func AddMovie(c *gin.Context) {
 	}
 }
 
-// SaveMovie 修改影片
-func SaveMovie(c *gin.Context) {
+// SaveProduct 修改产品
+func SaveProduct(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	exec, _ := config.Mysql.Exec(`update video set title=?,score=?,category=?,region=?,year=?,plot=?,format=?,play_url=?,director=?,episode=? where id=?`,
-		data["title"], data["score"], data["category"], data["region"], data["year"], data["plot"], data["format"], data["play_url"], data["director"], data["episode"], data["id"])
+	album, _ := data["album"].(string)
+	exec, _ := config.Mysql.Exec(`update product set name=?,price=?,level=?,category=?,Introduction=?,purity=?,album=?,details=? where id=?`,
+		data["name"], data["price"], data["level"], data["category"], data["Introduction"], data["purity"], trimAlbumDomain(album), data["details"], data["id"])
 	affected, _ := exec.RowsAffected()
 	if affected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
@@ -198,10 +265,10 @@ func SaveMovie(c *gin.Context) {
 	}
 }
 
-// DelMovie 删除影片
-func DelMovie(c *gin.Context) {
+// DelProduct 删除产品
+func DelProduct(c *gin.Context) {
 	ids := c.Query("ids")
-	exec, _ := config.Mysql.Exec("delete from video where id " + "in(" + ids + ")")
+	exec, _ := config.Mysql.Exec("delete from product where id " + "in(" + ids + ")")
 	affected, _ := exec.RowsAffected()
 	if affected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
@@ -210,40 +277,151 @@ func DelMovie(c *gin.Context) {
 	}
 }
 
-// GetPlayVideo 获取视频数据
-func GetPlayVideo(c *gin.Context) {
-	videoData := make(map[string]interface{})
-	_ = c.BindJSON(&videoData)
-	data, _ := config.MysqlQuery("select * from video where id = ?", videoData["id"])
-	if len(data) == 0 {
-		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "视频不存在"})
+// GetCategory 获取分类列表
+func GetCategory(c *gin.Context) {
+	var code, count int
+	var where string
+	name := c.Query("name")
+	if name != "" {
+		where = fmt.Sprintf(" where name like '%%%v%%'", name)
+	}
+	data, err := config.MysqlQuery("select * from category" + where + " order by id asc" + config.PageLimit(c))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
-	var playUri string
-	_ = config.Mysql.QueryRow("select play_uri from config").Scan(&playUri)
-	episodeData := make([]map[string]string, 0)
-	if data[0]["format"].(string) == "mp4" {
-		files, _ := os.ReadDir("." + data[0]["play_url"].(string) + "video")
-		if len(files) > 0 {
-			for key, file := range files {
-				if strings.Contains(file.Name(), ".mp4") == true {
-					episodeDataMap := make(map[string]string)
-					episodeDataMap["page"] = strconv.Itoa(key + 1)
-					episodeDataMap["playUri"] = playUri + data[0]["play_url"].(string) + "video/" + file.Name()
-					episodeData = append(episodeData, episodeDataMap)
-				}
-			}
-		}
+	err = config.Mysql.QueryRow("select count(id) from category" + where).Scan(&count)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
+		return
 	}
-	if data[0]["format"].(string) == "m3u8" {
-		episodeDataMap := make(map[string]string)
-		episodeDataMap["page"] = strconv.Itoa(1)
-		episodeDataMap["playUri"] = playUri + data[0]["play_url"].(string) + "m3u8/index.m3u8"
-		episodeData = append(episodeData, episodeDataMap)
+	c.JSON(http.StatusOK, gin.H{
+		"code":    code,
+		"message": "操作成功",
+		"count":   count,
+		"data":    data,
+	})
+}
+
+// AddCategory 添加分类
+func AddCategory(c *gin.Context) {
+	data := make(map[string]interface{})
+	_ = c.BindJSON(&data)
+	exec, _ := config.Mysql.Exec(`insert into category (name) values (?)`, data["name"])
+	id, _ := exec.LastInsertId()
+	if id > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
+}
+
+// SaveCategory 修改分类
+func SaveCategory(c *gin.Context) {
+	data := make(map[string]interface{})
+	_ = c.BindJSON(&data)
+	exec, _ := config.Mysql.Exec(`update category set name=? where id=?`, data["name"], data["id"])
+	affected, _ := exec.RowsAffected()
+	if affected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
+}
+
+// DelCategory 删除分类
+func DelCategory(c *gin.Context) {
+	ids := c.Query("ids")
+	exec, _ := config.Mysql.Exec("delete from category where id " + "in(" + ids + ")")
+	affected, _ := exec.RowsAffected()
+	if affected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
+}
+
+// GetContactSetting 获取联系方式配置
+func GetContactSetting(c *gin.Context) {
+	data, err := config.MysqlQuery("select * from contact order by id asc limit 1")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "操作成功",
-		"episode": episodeData,
+		"data":    data,
 	})
+}
+
+// SaveContactSetting 保存联系方式配置
+func SaveContactSetting(c *gin.Context) {
+	data := make(map[string]interface{})
+	_ = c.BindJSON(&data)
+	email, _ := data["email"].(string)
+	phone, _ := data["phone"].(string)
+	address, _ := data["address"].(string)
+	businessHours, _ := data["business_hours"].(string)
+	var count int
+	_ = config.Mysql.QueryRow("select count(id) from contact").Scan(&count)
+	var exec sql.Result
+	var err error
+	if count == 0 {
+		exec, err = config.Mysql.Exec(`insert into contact (email,phone,address,business_hours) values (?,?,?,?)`,
+			email, phone, address, businessHours)
+	} else {
+		exec, err = config.Mysql.Exec(`update contact set email=?,phone=?,address=?,business_hours=? order by id asc limit 1`,
+			email, phone, address, businessHours)
+	}
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	affected, _ := exec.RowsAffected()
+	if affected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
+}
+
+// GetConfigSetting 获取系统配置
+func GetConfigSetting(c *gin.Context) {
+	data, err := config.MysqlQuery("select * from config order by id asc limit 1")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "操作成功",
+		"data":    data,
+	})
+}
+
+// SaveConfigSetting 保存系统配置
+func SaveConfigSetting(c *gin.Context) {
+	data := make(map[string]interface{})
+	_ = c.BindJSON(&data)
+	domain, _ := data["domain"].(string)
+	var count int
+	_ = config.Mysql.QueryRow("select count(id) from config").Scan(&count)
+	var exec sql.Result
+	var err error
+	if count == 0 {
+		exec, err = config.Mysql.Exec(`insert into config (domain) values (?)`, domain)
+	} else {
+		exec, err = config.Mysql.Exec(`update config set domain=? order by id asc limit 1`, domain)
+	}
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	affected, _ := exec.RowsAffected()
+	if affected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
 }

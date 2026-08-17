@@ -55,19 +55,19 @@
         <ul class="footer-contact">
           <li>
             <span class="contact-icon">📧</span>
-            <a href="mailto:info@hkroids.com">info@hkroids.com</a>
+            <a :href="'mailto:' + contactInfo.email">{{ contactInfo.email }}</a>
           </li>
           <li>
             <span class="contact-icon">📞</span>
-            <a href="tel:+1234567890">+1 (234) 567-890</a>
+            <a :href="phoneHref">{{ contactInfo.phone }}</a>
           </li>
           <li>
             <span class="contact-icon">📍</span>
-            <span>Hong Kong, China</span>
+            <span>{{ contactInfo.address }}</span>
           </li>
           <li>
             <span class="contact-icon">🕐</span>
-            <span>Mon–Sat: 9:00 AM – 6:00 PM</span>
+            <span>{{ contactInfo.business_hours }}</span>
           </li>
         </ul>
       </div>
@@ -87,12 +87,38 @@
 </template>
 
 <script>
+import {GetContactInfo} from '@/api/contact'
+
 export default {
   name: 'SiteFooter',
+  data() {
+    return {
+      // 联系方式，默认值兼容接口未返回的场景，后台可配置
+      contactInfo: {
+        email: 'info@hkroids.com',
+        phone: '+1 (234) 567-890',
+        address: 'Hong Kong, China',
+        business_hours: 'Mon – Sat: 9:00 AM – 6:00 PM'
+      }
+    }
+  },
   computed: {
     currentYear() {
       return new Date().getFullYear()
+    },
+    // 电话拨打链接：去掉非数字字符
+    phoneHref() {
+      return 'tel:' + (this.contactInfo.phone || '').replace(/[^\d+]/g, '')
     }
+  },
+  created() {
+    // 从后台加载联系方式配置，失败时保留默认值
+    GetContactInfo().then(list => {
+      if (list && list.length) {
+        this.contactInfo = {...this.contactInfo, ...list[0]}
+      }
+    }).catch(() => {
+    })
   }
 }
 </script>

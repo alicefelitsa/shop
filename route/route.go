@@ -29,22 +29,33 @@ func SetupRouter() *gin.Engine {
 		boss.GET("/logout", controller.AdminLogout)
 		boss.GET("/captcha", controller.Captcha)
 		boss.GET("/auth/user", controller.AuthUser)
-		boss.GET("/GetMovie", controller.GetMovie)
-		boss.POST("/AddMovie", controller.AddMovie)
-		boss.POST("/SaveMovie", controller.SaveMovie)
-		boss.GET("/DelMovie", controller.DelMovie)
-		boss.POST("/GetPlayVideo", controller.GetPlayVideo)
+		boss.GET("/GetMessage", controller.GetMessage)
+		boss.GET("/DelMessage", controller.DelMessage)
+		boss.GET("/GetProductList", controller.GetProductList)
+		boss.POST("/UploadImage", controller.UploadImage)
+		boss.POST("/AddProduct", controller.AddProduct)
+		boss.POST("/SaveProduct", controller.SaveProduct)
+		boss.GET("/DelProduct", controller.DelProduct)
+		boss.GET("/GetCategory", controller.GetCategory)
+		boss.POST("/AddCategory", controller.AddCategory)
+		boss.POST("/SaveCategory", controller.SaveCategory)
+		boss.GET("/DelCategory", controller.DelCategory)
+		boss.GET("/GetContactSetting", controller.GetContactSetting)
+		boss.POST("/SaveContactSetting", controller.SaveContactSetting)
+		boss.GET("/GetConfigSetting", controller.GetConfigSetting)
+		boss.POST("/SaveConfigSetting", controller.SaveConfigSetting)
 
 	}
 	web := router.Group("/api/web")
 	{
 		web.GET("/GetProduct", controller.GetProduct)
+		web.GET("/GetProductDetail", controller.GetProductDetail)
+		web.POST("/AddMessage", controller.AddMessage)
+		web.GET("/GetContactInfo", controller.GetContactInfo)
 
 	}
-	//file := router.Group("/")
-	//{
-	//	file.Static("/movie", "./movie")
-	//}
+	//上传的图片静态服务
+	router.Static("/upload", "./upload")
 	//ws := router.Group("/ws")
 	//{
 	//	controller.StartClientManager()

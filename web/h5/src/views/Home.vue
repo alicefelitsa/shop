@@ -5,11 +5,11 @@
       <div class="banner-slides">
         <transition-group name="banner-fade" tag="div" class="slides-wrapper">
           <div
-            v-for="(banner, index) in banners"
-            v-show="currentSlide === index"
-            :key="banner.id"
-            class="banner-slide"
-            :style="{ backgroundImage: `url(${banner.image})` }"
+              v-for="(banner, index) in banners"
+              v-show="currentSlide === index"
+              :key="banner.id"
+              class="banner-slide"
+              :style="{ backgroundImage: `url(${banner.image})` }"
           >
             <div class="banner-overlay"></div>
             <div class="banner-content container">
@@ -17,7 +17,9 @@
               <p class="banner-subtitle">{{ banner.subtitle }}</p>
               <router-link :to="banner.link" class="btn btn-accent btn-lg banner-cta">
                 {{ banner.cta }}
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
               </router-link>
             </div>
           </div>
@@ -26,19 +28,23 @@
       <!-- Banner Controls -->
       <div class="banner-dots">
         <button
-          v-for="(banner, index) in banners"
-          :key="'dot-' + banner.id"
-          class="dot"
-          :class="{ active: currentSlide === index }"
-          @click="goToSlide(index)"
-          :aria-label="'Go to slide ' + (index + 1)"
+            v-for="(banner, index) in banners"
+            :key="'dot-' + banner.id"
+            class="dot"
+            :class="{ active: currentSlide === index }"
+            @click="goToSlide(index)"
+            :aria-label="'Go to slide ' + (index + 1)"
         ></button>
       </div>
       <button class="banner-arrow arrow-left" @click="prevSlide" aria-label="Previous">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
       </button>
       <button class="banner-arrow arrow-right" @click="nextSlide" aria-label="Next">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
       </button>
     </section>
 
@@ -71,15 +77,19 @@
             </div>
             <router-link to="/about" class="btn btn-outline">
               Learn More About Us
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </router-link>
           </div>
           <div class="intro-image">
             <div class="intro-image-fallback">
               <svg class="fallback-art" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
                 <!-- Corner decorative hexagons -->
-                <polygon points="360,-15 321,8 321,53 360,75 399,53 399,8" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-                <polygon points="35,240 9,255 9,285 35,300 61,285 61,255" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+                <polygon points="360,-15 321,8 321,53 360,75 399,53 399,8" fill="none" stroke="rgba(255,255,255,0.1)"
+                         stroke-width="2"/>
+                <polygon points="35,240 9,255 9,285 35,300 61,285 61,255" fill="none" stroke="rgba(255,255,255,0.1)"
+                         stroke-width="2"/>
                 <!-- Scattered dots -->
                 <circle cx="70" cy="60" r="3" fill="rgba(255,255,255,0.3)"/>
                 <circle cx="330" cy="250" r="3" fill="rgba(255,255,255,0.3)"/>
@@ -97,8 +107,10 @@
                   <line x1="250" y1="179" x2="308" y2="212"/>
                 </g>
                 <!-- Central benzene ring -->
-                <polygon points="200,92 150,121 150,179 200,208 250,179 250,121" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.6)" stroke-width="2.5"/>
-                <polygon points="200,112 167,131 167,169 200,188 233,169 233,131" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                <polygon points="200,92 150,121 150,179 200,208 250,179 250,121" fill="rgba(255,255,255,0.04)"
+                         stroke="rgba(255,255,255,0.6)" stroke-width="2.5"/>
+                <polygon points="200,112 167,131 167,169 200,188 233,169 233,131" fill="none"
+                         stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
                 <!-- Chain atoms -->
                 <circle cx="200" cy="48" r="10" fill="#c9a84c"/>
                 <circle cx="302" cy="95" r="7" fill="rgba(255,255,255,0.85)"/>
@@ -135,15 +147,17 @@
         </p>
         <div class="products-grid">
           <ProductCard
-            v-for="product in featuredProducts"
-            :key="product.id"
-            :product="product"
+              v-for="product in featuredProducts"
+              :key="product.id"
+              :product="product"
           />
         </div>
         <div class="section-cta">
           <router-link to="/products" class="btn btn-primary btn-lg">
             View All Products
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
           </router-link>
         </div>
       </div>
@@ -170,7 +184,8 @@
 
     <!-- CTA Section -->
     <section class="cta-section">
-      <div class="cta-bg" style="background-image: url('https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=1920&h=600&fit=crop')"></div>
+      <div class="cta-bg"
+           style="background-image: url('https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=1920&h=600&fit=crop')"></div>
       <div class="cta-overlay"></div>
       <div class="container cta-content">
         <h2 class="cta-title">Ready to Start Your Research?</h2>
@@ -180,7 +195,9 @@
         </p>
         <div class="cta-buttons">
           <router-link to="/contact" class="btn btn-accent btn-lg">Contact Us Now</router-link>
-          <router-link to="/products" class="btn btn-lg" style="color:#fff;border:2px solid rgba(255,255,255,0.4);">Browse Products</router-link>
+          <router-link to="/products" class="btn btn-lg" style="color:#fff;border:2px solid rgba(255,255,255,0.4);">
+            Browse Products
+          </router-link>
         </div>
       </div>
     </section>
@@ -189,12 +206,12 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { banners } from '@/data/products'
-import { GetProduct } from '../api/product'
+import {banners} from '@/data/products'
+import {GetProduct} from '@/api/product'
 
 export default {
   name: 'HomePage',
-  components: { ProductCard },
+  components: {ProductCard},
   data() {
     return {
       banners,
@@ -250,7 +267,8 @@ export default {
     // 从后端接口加载产品数据
     GetProduct().then(res => {
       this.products = res.productData || []
-    }).catch(() => {})
+    }).catch(() => {
+    })
   },
   mounted() {
     this.startAutoSlide()
@@ -393,8 +411,13 @@ export default {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.arrow-left { left: 24px; }
-.arrow-right { right: 24px; }
+.arrow-left {
+  left: 24px;
+}
+
+.arrow-right {
+  right: 24px;
+}
 
 /* Banner Transition */
 .banner-fade-enter-active,
@@ -481,10 +504,9 @@ export default {
   inset: 0;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  background:
-    radial-gradient(circle at 78% 22%, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
-    radial-gradient(circle at 15% 85%, rgba(201, 168, 76, 0.12) 0%, transparent 40%),
-    linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: radial-gradient(circle at 78% 22%, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+  radial-gradient(circle at 15% 85%, rgba(201, 168, 76, 0.12) 0%, transparent 40%),
+  linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   overflow: hidden;
 }
 

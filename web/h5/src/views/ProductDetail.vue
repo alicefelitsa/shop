@@ -14,7 +14,7 @@
           <!-- Image Gallery -->
           <div class="detail-gallery">
             <div class="gallery-main">
-              <img :src="product.album" :alt="product.name" />
+              <img :src="product.album" :alt="product.name"/>
             </div>
           </div>
 
@@ -111,9 +111,9 @@
           <h2 class="section-title">Related Products</h2>
           <div class="related-grid">
             <ProductCard
-              v-for="p in relatedProducts"
-              :key="p.id"
-              :product="p"
+                v-for="p in relatedProducts"
+                :key="p.id"
+                :product="p"
             />
           </div>
         </div>
@@ -142,42 +142,53 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import { GetProduct } from '../api/product'
+import {GetProductDetail} from '@/api/product'
 
 export default {
   name: 'ProductDetail',
-  components: { ProductCard },
+  components: {ProductCard},
   data() {
     return {
-      products: [],
+      product: null,
+      relatedProducts: [],
       // 接口加载中，避免加载完成前误显示 Product Not Found
       loading: true
     }
   },
   computed: {
-    product() {
-      const id = parseInt(this.$route.params.id)
-      return this.products.find(p => p.id === id) || null
-    },
-    relatedProducts() {
-      if (!this.product) return []
-      return this.products
-        .filter(p => p.category === this.product.category && p.id !== this.product.id)
-        .slice(0, 4)
-    },
     // 接口返回的详情描述按段落拆分
     detailParagraphs() {
       if (!this.product || !this.product.details) return []
       return this.product.details.split('\n').map(s => s.trim()).filter(Boolean)
     }
   },
+  watch: {
+    // 相关产品切换时组件被复用，created 不会重新执行，需监听路由参数重新请求
+    '$route.params.id'() {
+      this.fetchDetail()
+    }
+  },
   created() {
-    // 从后端接口加载产品数据
-    GetProduct().then(res => {
-      this.products = res.productData || []
-    }).catch(() => {}).finally(() => {
-      this.loading = false
-    })
+    // 从后端接口加载产品详情与相关产品
+    this.fetchDetail()
+  },
+  methods: {
+    fetchDetail() {
+      const id = parseInt(this.$route.params.id)
+      this.loading = true
+      this.product = null
+      this.relatedProducts = []
+      GetProductDetail({id}).then(res => {
+        const list = res.productData || []
+        this.product = list.length ? list[0] : null
+        if (this.product) {
+          this.relatedProducts = (res.relatedProducts || []).filter(p => p.id !== this.product.id)
+        }
+      }).catch(() => {
+      }).finally(() => {
+        this.loading = false
+      })
+    }
   }
 }
 </script>
@@ -350,6 +361,11 @@ export default {
   color: var(--text-secondary);
   line-height: 1.75;
   margin-bottom: 20px;
+  /* 简介最多显示 3 行，超出省略 */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .purity-highlight {

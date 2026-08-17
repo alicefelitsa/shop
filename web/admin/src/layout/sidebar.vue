@@ -37,32 +37,23 @@
         </div>
       </el-menu-item>
     </el-menu>
-    <qr :visible.sync="dialogVisible"></qr>
   </div>
 </template>
 
 <script>
 import {EventBus} from "@/utils/event-bus";
-import Qr from "@/views/qr";
 
 export default {
-  components: {
-    Qr,
-  },
   data() {
     return {
       avatar: '/static/avatar.jpg',
       account: localStorage.getItem("account"),
       menuList: [
-        {path: '/movie/index', title: '影片', icon: 'el-icon-video-camera-solid'},
-        {path: '/user', title: '用户', icon: 'el-icon-user'},
-        //{path: '/chat', title: '消息', icon: 'el-icon-message'},
-        //{path: '', title: '二维码', icon: 'el-icon-s-grid'},
-        //{path: '/greet', title: '打招呼', icon: 'el-icon-position'},
-        //{path: '/answer', title: '智能回复', icon: 'el-icon-orange'},
-        {path: '/statistic', title: '统计', icon: 'el-icon-s-data'},
+        {path: '/product', title: '产品', icon: 'el-icon-goods'},
+        {path: '/category', title: '分类', icon: 'el-icon-menu'},
+        {path: '/message', title: '留言', icon: 'el-icon-chat-dot-square'},
+        {path: '/contact', title: '联系方式', icon: 'el-icon-phone-outline'},
         {path: '/setting', title: '设置', icon: 'el-icon-setting'},
-        {path: '/logs', title: '日志', icon: 'el-icon-date'},
       ],
       dialogVisible: false,
     }
@@ -90,7 +81,6 @@ export default {
         // 执行退出登录逻辑
         localStorage.removeItem('token')
         localStorage.removeItem('account')
-        localStorage.removeItem('avatar')
         this.$router.push('/login')
       }).catch(() => {
         // 取消退出

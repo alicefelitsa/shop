@@ -4,7 +4,6 @@ export async function login(data) {
     const res = await request.post('/login', data);
     if (res.data.code === 0) {
         localStorage.setItem("token", res.data.token);
-        localStorage.setItem("avatar", res.data.avatar);
         localStorage.setItem("account", res.data.account);
         return res.data.message;
     }
