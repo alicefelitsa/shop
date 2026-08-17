@@ -219,10 +219,10 @@ func UploadImage(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "获取上传文件失败"})
 		return
 	}
-	if !function.IsFileExist("./upload") {
-		_ = os.Mkdir("./upload", 0777)
+	if !function.IsFileExist("./uploads") {
+		_ = os.Mkdir("./uploads", 0777)
 	}
-	ok, _, _, fileAddress := function.SaveImageFile(c, "./upload", file)
+	ok, _, _, fileAddress := function.SaveImageFile(c, "./uploads", file)
 	if !ok {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "上传失败，仅支持png/jpg/gif/jpeg图片"})
 		return
@@ -230,7 +230,7 @@ func UploadImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "操作成功",
-		"url":     "/upload" + fileAddress,
+		"url":     "/uploads" + fileAddress,
 	})
 }
 
