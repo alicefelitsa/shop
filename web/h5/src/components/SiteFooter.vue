@@ -55,19 +55,21 @@
         <ul class="footer-contact">
           <li>
             <span class="contact-icon">📧</span>
-            <a :href="'mailto:' + contactInfo.email">{{ contactInfo.email }}</a>
+            <a v-if="contactInfo.email" :href="'mailto:' + contactInfo.email">{{ contactInfo.email }}</a>
+            <span v-else>None</span>
           </li>
           <li>
             <span class="contact-icon">📞</span>
-            <a :href="phoneHref">{{ contactInfo.phone }}</a>
+            <a v-if="contactInfo.phone" :href="phoneHref">{{ contactInfo.phone }}</a>
+            <span v-else>None</span>
           </li>
           <li>
             <span class="contact-icon">📍</span>
-            <span>{{ contactInfo.address }}</span>
+            <span>{{ contactInfo.address || 'None' }}</span>
           </li>
           <li>
             <span class="contact-icon">🕐</span>
-            <span>{{ contactInfo.business_hours }}</span>
+            <span>{{ contactInfo.business_hours || 'None' }}</span>
           </li>
         </ul>
       </div>
@@ -93,12 +95,12 @@ export default {
   name: 'SiteFooter',
   data() {
     return {
-      // 联系方式，默认值兼容接口未返回的场景，后台可配置
+      // 联系方式，由后台配置，未设置时显示 None
       contactInfo: {
-        email: 'info@hkroids.com',
-        phone: '+1 (234) 567-890',
-        address: 'Hong Kong, China',
-        business_hours: 'Mon – Sat: 9:00 AM – 6:00 PM'
+        email: '',
+        phone: '',
+        address: '',
+        business_hours: ''
       }
     }
   },
@@ -112,10 +114,16 @@ export default {
     }
   },
   created() {
-    // 从后台加载联系方式配置，失败时保留默认值
+    // 从后台加载联系方式配置，失败或未设置时保持为空，页面显示 None
     GetContactInfo().then(list => {
       if (list && list.length) {
-        this.contactInfo = {...this.contactInfo, ...list[0]}
+        const row = list[0]
+        this.contactInfo = {
+          email: row.email || '',
+          phone: row.phone || '',
+          address: row.address || '',
+          business_hours: row.business_hours || ''
+        }
       }
     }).catch(() => {
     })

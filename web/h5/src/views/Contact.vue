@@ -129,7 +129,8 @@
                   <div class="info-icon">📧</div>
                   <div class="info-content">
                     <span class="info-label">Email</span>
-                    <a :href="'mailto:' + contactInfo.email" class="info-value">{{ contactInfo.email }}</a>
+                    <a v-if="contactInfo.email" :href="'mailto:' + contactInfo.email" class="info-value">{{ contactInfo.email }}</a>
+                    <span v-else class="info-value">None</span>
                   </div>
                 </div>
 
@@ -137,7 +138,8 @@
                   <div class="info-icon">📞</div>
                   <div class="info-content">
                     <span class="info-label">Phone</span>
-                    <a :href="phoneHref" class="info-value">{{ contactInfo.phone }}</a>
+                    <a v-if="contactInfo.phone" :href="phoneHref" class="info-value">{{ contactInfo.phone }}</a>
+                    <span v-else class="info-value">None</span>
                   </div>
                 </div>
 
@@ -145,7 +147,7 @@
                   <div class="info-icon">📍</div>
                   <div class="info-content">
                     <span class="info-label">Address</span>
-                    <span class="info-value">{{ contactInfo.address }}</span>
+                    <span class="info-value">{{ contactInfo.address || 'None' }}</span>
                   </div>
                 </div>
 
@@ -153,7 +155,7 @@
                   <div class="info-icon">🕐</div>
                   <div class="info-content">
                     <span class="info-label">Business Hours</span>
-                    <span class="info-value">{{ contactInfo.business_hours }}</span>
+                    <span class="info-value">{{ contactInfo.business_hours || 'None' }}</span>
                   </div>
                 </div>
               </div>
@@ -259,12 +261,12 @@ export default {
   name: 'ContactPage',
   data() {
     return {
-      // 联系方式，默认值兼容接口未返回的场景，后台可配置
+      // 联系方式，由后台配置，未设置时显示 None
       contactInfo: {
-        email: 'info@hkroids.com',
-        phone: '+1 (234) 567-890',
-        address: 'Hong Kong, China',
-        business_hours: 'Mon – Sat: 9:00 AM – 6:00 PM'
+        email: '',
+        phone: '',
+        address: '',
+        business_hours: ''
       },
       form: {
         name: '',
@@ -326,11 +328,17 @@ export default {
     this.fetchContactInfo()
   },
   methods: {
-    // 加载联系方式配置，失败时保留默认值
+    // 加载联系方式配置，失败或未设置时保持为空，页面显示 None
     fetchContactInfo() {
       GetContactInfo().then(list => {
         if (list && list.length) {
-          this.contactInfo = {...this.contactInfo, ...list[0]}
+          const row = list[0]
+          this.contactInfo = {
+            email: row.email || '',
+            phone: row.phone || '',
+            address: row.address || '',
+            business_hours: row.business_hours || ''
+          }
         }
       }).catch(() => {
       })
