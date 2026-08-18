@@ -20,7 +20,7 @@
         <div class="story-grid">
           <div class="story-image">
             <img
-              src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&h=500&fit=crop"
+              src="@/assets/a1.jpg"
               alt="Our laboratory"
               loading="lazy"
             />
@@ -185,7 +185,7 @@ export default {
 /* ===== Page Header ===== */
 .page-header {
   position: relative;
-  height: 360px;
+  height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;

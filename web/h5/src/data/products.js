@@ -431,7 +431,7 @@ export const banners = [
     id: 1,
     title: 'Premium Research Peptides',
     subtitle: 'Trusted by researchers worldwide. Lab-tested purity above 99%.',
-    image: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=1920&h=900&fit=crop',
+    image: './assets/b1.jpg',
     cta: 'Explore Products',
     link: '/products'
   },
@@ -439,7 +439,7 @@ export const banners = [
     id: 2,
     title: 'Cutting-Edge Lab Equipment',
     subtitle: 'Professional-grade machinery for peptide synthesis and lyophilization.',
-    image: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?w=1920&h=900&fit=crop',
+    image: './assets/b2.jpg',
     cta: 'View Equipment',
     link: '/products?category=equipment'
   },
@@ -447,7 +447,7 @@ export const banners = [
     id: 3,
     title: 'Wholesale & Bulk Orders',
     subtitle: 'Competitive pricing for research institutions and laboratories.',
-    image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1920&h=900&fit=crop',
+    image: './assets/b3.jpg',
     cta: 'Contact Us',
     link: '/contact'
   }

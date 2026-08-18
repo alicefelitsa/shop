@@ -11,7 +11,7 @@ require (
 	github.com/qiniu/go-sdk/v7 v7.25.5
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/spf13/viper v1.21.0
-	github.com/tagphi/czdb-search-golang v1.0.4
+	github.com/tagphi/czdb-search-golang v1.0.6
 	github.com/tuotoo/qrcode v0.0.0-20220425170535-52ccc2bebf5d
 	github.com/ulule/limiter/v3 v3.11.2
 	golang.org/x/time v0.14.0

@@ -395,7 +395,8 @@ export default {
 .detail-actions {
   display: flex;
   gap: 12px;
-  margin-bottom: 32px;
+  margin-top: 5px;
+  margin-bottom: 25px;
   flex-wrap: wrap;
 }
 
