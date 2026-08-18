@@ -206,7 +206,6 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
-import {banners} from '@/data/products'
 import {GetProduct} from '@/api/product'
 
 export default {
@@ -214,7 +213,32 @@ export default {
   components: {ProductCard},
   data() {
     return {
-      banners,
+      banners:[
+        {
+          id: 1,
+          title: 'Premium Research Peptides',
+          subtitle: 'Trusted by researchers worldwide. Lab-tested purity above 99%.',
+          image: require('@/assets/b1.jpg'),
+          cta: 'Explore Products',
+          link: '/products'
+        },
+        {
+          id: 2,
+          title: 'Cutting-Edge Lab Equipment',
+          subtitle: 'Professional-grade machinery for peptide synthesis and lyophilization.',
+          image: require('@/assets/b2.jpg'),
+          cta: 'View Equipment',
+          link: '/products?category=equipment'
+        },
+        {
+          id: 3,
+          title: 'Wholesale & Bulk Orders',
+          subtitle: 'Competitive pricing for research institutions and laboratories.',
+          image: require('@/assets/b3.jpg'),
+          cta: 'Contact Us',
+          link: '/contact'
+        }
+      ],
       products: [],
       currentSlide: 0,
       slideInterval: null,
