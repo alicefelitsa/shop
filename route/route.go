@@ -54,8 +54,8 @@ func SetupRouter() *gin.Engine {
 		web.GET("/GetContactInfo", controller.GetContactInfo)
 
 	}
-	//上传的图片静态服务
-	router.Static("/upload", "./upload")
+	//上传的图片静态服务（URL 前缀需与 UploadImage 返回的 url 保持一致）
+	router.Static("/uploads", "./uploads")
 	//ws := router.Group("/ws")
 	//{
 	//	controller.StartClientManager()

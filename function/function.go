@@ -212,25 +212,31 @@ func StrToUnix(timeStr, layout string) time.Time {
 }
 
 // SaveImageFile 保存上传的图片到服务器
-func SaveImageFile(c *gin.Context, pathFile string, file *multipart.FileHeader) (bool, string, string, string) {
+func SaveImageFile(c *gin.Context, filePath string, file *multipart.FileHeader) (fileName, fileUrl string, err error) {
 	fileExt := strings.ToLower(path.Ext(file.Filename))
-	if fileExt != ".png" && fileExt != ".jpg" && fileExt != ".gif" && fileExt != ".jpeg" {
-		return false, "", "", ""
-	} else {
-		date := time.Now().Format("20060102")
-		if ok := IsFileExist(pathFile + "/" + date); !ok {
-			_ = os.Mkdir(pathFile+"/"+date, 0777)
-		}
-		var fileName = strconv.FormatInt(time.Now().Unix(), 10) + RandomNumberString(5) + fileExt
-		var filePath = pathFile + "/" + date + "/" + fileName
-		var fileAddress = "/" + date + "/" + fileName
-		err := c.SaveUploadedFile(file, filePath)
-		if err != nil {
-			return false, "", "", ""
-		} else {
-			return true, fileName, filePath, fileAddress
+	switch fileExt {
+	case ".png", ".jpg", ".gif", ".jpeg":
+	default:
+		return "", "", fmt.Errorf("不支持的文件类型: %s", fileExt)
+	}
+	dateDir := "/" + time.Now().Format("20060102")
+	fileDir := filePath + dateDir
+	if ok := IsFileExist(fileDir); !ok {
+		if err = os.MkdirAll(fileDir, 0755); err != nil {
+			return "", "", err
 		}
 	}
+	fileName = strconv.FormatInt(time.Now().Unix(), 10) + RandomNumberString(5) + fileExt
+	fileSavePath := fileDir + "/" + fileName
+	if err = c.SaveUploadedFile(file, fileSavePath); err != nil {
+		return "", "", err
+	}
+	err = os.Chmod(fileDir, 0755)
+	if err != nil {
+		return "", "", fmt.Errorf("设置目录权限失败: %s", err)
+	}
+	fileUrl = dateDir + "/" + fileName
+	return fileName, fileUrl, nil
 }
 
 // SaveBase64ImageFile base64图片写入文件,保存图片
@@ -248,6 +254,8 @@ func SaveBase64ImageFile(path string, base64ImageContent string) (bool, string, 
 	if ok := IsFileExist(path + "/" + date); !ok {
 		_ = os.Mkdir(path+"/"+date, 0666)
 	}
+	// umask 会影响 Mkdir 的实际权限，显式 chmod 确保 Nginx 可读
+	_ = os.Chmod(path+"/"+date, 0755)
 	var fileName = strconv.FormatInt(time.Now().Unix(), 10) + RandomNumberString(5) + "." + fileType
 	var file string = path + "/" + date + "/" + fileName
 	byteData, _ := base64.StdEncoding.DecodeString(base64Str)
@@ -255,6 +263,8 @@ func SaveBase64ImageFile(path string, base64ImageContent string) (bool, string, 
 	if err != nil {
 		return false, "", ""
 	}
+	// 显式 chmod 确保 Nginx 可读
+	_ = os.Chmod(file, 0644)
 	return true, fileName, file
 }
 
