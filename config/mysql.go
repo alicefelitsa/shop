@@ -1,18 +1,18 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-ini/ini"
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"log"
 	"strconv"
 	"sync"
 	"time"
 )
 
-var Mysql *sql.DB
+var Mysql *gorm.DB
 
 func init() {
 	InitMysql()
@@ -20,77 +20,32 @@ func init() {
 
 // InitMysql 初始化Mysql连接
 func InitMysql() {
-	mysql := ReadIniFile("./config/mysql.ini")
-	dbAddress := mysql.Section("mysql").Key("dbAddress").Value()
-	dbName := mysql.Section("mysql").Key("dbName").Value()
-	dbUser := mysql.Section("mysql").Key("dbUser").Value()
-	dbPasswd := mysql.Section("mysql").Key("dbPasswd").Value()
-	sqlConnStr := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&timeout=5s&readTimeout=30s&writeTimeout=30s&interpolateParams=true", dbUser, dbPasswd, dbAddress, dbName)
+	mysqlIni := ReadIniFile("./config/mysql.ini")
+	dbAddress := mysqlIni.Section("mysql").Key("dbAddress").Value()
+	dbName := mysqlIni.Section("mysql").Key("dbName").Value()
+	dbUser := mysqlIni.Section("mysql").Key("dbUser").Value()
+	dbPasswd := mysqlIni.Section("mysql").Key("dbPasswd").Value()
+	dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=true&timeout=5s&readTimeout=30s&writeTimeout=30s&interpolateParams=true", dbUser, dbPasswd, dbAddress, dbName)
 	var err error
-	Mysql, err = sql.Open("mysql", sqlConnStr)
+	Mysql, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("初始化Mysql时出错：", err)
 	}
 	// 设置连接池参数
-	Mysql.SetMaxOpenConns(100)                 // 最大连接数
-	Mysql.SetMaxIdleConns(10)                  // 空闲连接数
-	Mysql.SetConnMaxLifetime(30 * time.Minute) // 连接最大存活时间
-	Mysql.SetConnMaxIdleTime(10 * time.Minute) // 空闲连接最大存活时间
-	if err = Mysql.Ping(); err != nil {
+	sqlDB, err := Mysql.DB()
+	if err != nil {
+		log.Fatal("获取Mysql连接池时出错：", err)
+	}
+	sqlDB.SetMaxOpenConns(100)                 // 最大连接数
+	sqlDB.SetMaxIdleConns(10)                  // 空闲连接数
+	sqlDB.SetConnMaxLifetime(30 * time.Minute) // 连接最大存活时间
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // 空闲连接最大存活时间
+	if err = sqlDB.Ping(); err != nil {
 		log.Fatal("连接到Mysql时出错：", err)
 	}
 	fmt.Println("Mysql连接成功！")
 	//warmupConnections(Mysql, 10)
 	//go keepAlive(Mysql)
-}
-
-// MysqlQuery 执行SQL查询并返回 []map[string]interface{}
-func MysqlQuery(query string, args ...any) ([]map[string]interface{}, error) {
-	// 使用Prepare语句提高重复查询性能
-	stmt, err := Mysql.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-	rows, err := stmt.Query(args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	count := len(columns)
-	// 预分配足够容量的切片，减少内存分配和GC压力
-	tableData := make([]map[string]interface{}, 0) // 预估初始容量
-	// 复用values和valuePtrs数组
-	values := make([]interface{}, count)
-	valuePtr := make([]interface{}, count)
-	for i := range values {
-		valuePtr[i] = &values[i]
-	}
-	// 预定义columnMap避免每次循环都创建
-	columnMap := make(map[string]int, count)
-	for i, col := range columns {
-		columnMap[col] = i
-	}
-	for rows.Next() {
-		if err := rows.Scan(valuePtr...); err != nil {
-			return nil, err
-		}
-		entry := make(map[string]interface{}, count)
-		for col, i := range columnMap {
-			val := values[i]
-			if b, ok := val.([]byte); ok {
-				entry[col] = string(b)
-			} else {
-				entry[col] = val
-			}
-		}
-		tableData = append(tableData, entry)
-	}
-	return tableData, nil
 }
 
 // ReadIniFile 读取ini文件的数据
@@ -117,7 +72,12 @@ func PageLimit(c *gin.Context) string {
 
 // PrintMysqlStats 连接池监控打印
 func PrintMysqlStats() {
-	stats := Mysql.Stats()
+	sqlDB, err := Mysql.DB()
+	if err != nil {
+		fmt.Println("获取Mysql连接池失败：", err)
+		return
+	}
+	stats := sqlDB.Stats()
 	fmt.Printf("连接池状态:\n")
 	fmt.Printf("最大打开连接数: %d\n", stats.MaxOpenConnections)
 	fmt.Printf("打开连接数: %d\n", stats.OpenConnections)
@@ -130,7 +90,7 @@ func PrintMysqlStats() {
 }
 
 // 预热指定数量的连接
-func warmupConnections(db *sql.DB, count int) {
+func warmupConnections(db *gorm.DB, count int) {
 	start := time.Now()
 	var wg sync.WaitGroup
 	errChan := make(chan error, count)
@@ -139,8 +99,7 @@ func warmupConnections(db *sql.DB, count int) {
 		go func() {
 			defer wg.Done()
 			// 执行简单查询来建立连接
-			_, err := db.Exec("SELECT 1")
-			if err != nil {
+			if err := db.Exec("SELECT 1").Error; err != nil {
 				errChan <- err
 			}
 		}()
@@ -157,11 +116,11 @@ func warmupConnections(db *sql.DB, count int) {
 }
 
 // 定时保活连接池
-func keepAlive(db *sql.DB) {
+func keepAlive(db *gorm.DB) {
 	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
 	for t := range ticker.C {
-		_, err := db.Exec("SELECT 1")
+		err := db.Exec("SELECT 1").Error
 		sprintf := fmt.Sprintf("Mysql保活连接池：%s %v", t.Format("2006-01-02 15:04:05"), err)
 		fmt.Println(sprintf)
 		LogInfo("%s", sprintf)

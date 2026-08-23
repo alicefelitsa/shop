@@ -455,10 +455,10 @@ func GetOnlineClients() []string {
 func clientStatus(uuid string, status int, timer string) {
 	if status == 0 {
 		//上线
-		_, _ = config.Mysql.Exec("update client set status=?,online_time=? where uuid=?", status, timer, uuid)
+		_ = config.Mysql.Exec("update client set status=?,online_time=? where uuid=?", status, timer, uuid)
 	}
 	if status == 1 {
 		//离线
-		_, _ = config.Mysql.Exec("update client set status=?,offline_time=? where uuid=?", status, timer, uuid)
+		_ = config.Mysql.Exec("update client set status=?,offline_time=? where uuid=?", status, timer, uuid)
 	}
 }

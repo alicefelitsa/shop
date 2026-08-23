@@ -20,7 +20,8 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "参数缺少"})
 		return
 	}
-	resData, _ := config.MysqlQuery("select id from user where account=? && password=?", data["account"], data["password"])
+	resData := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select id from user where account=? && password=?", data["account"], data["password"]).Scan(&resData).Error
 	if len(resData) == 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "账号或密码错误"})
 		return
@@ -55,15 +56,22 @@ func GetMovieList(c *gin.Context) {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(parameter, " && "))
 	}
 
-	videoData, _ := config.MysqlQuery("select * from video" + where + " order by year desc,id desc" + config.PageLimit(c))
+	videoData := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select * from video" + where + " order by year desc,id desc" + config.PageLimit(c)).Scan(&videoData).Error
 	if len(videoData) > 0 {
 		domainHost := "http://" + c.Request.Host
 		for k, val := range videoData {
 			videoData[k]["cover"] = domainHost + val["play_url"].(string) + "cover.png"
+			for col, v := range val {
+				if t, ok := v.(time.Time); ok {
+					videoData[k][col] = t.Format("2006-01-02 15:04:05")
+				}
+			}
 		}
 	}
-	_ = config.Mysql.QueryRow("select count(id) from video" + where).Scan(&count)
-	categoryData, _ := config.MysqlQuery("select * from category order by sort,id")
+	_ = config.Mysql.Raw("select count(id) from video" + where).Scan(&count).Error
+	categoryData := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select * from category order by sort,id").Scan(&categoryData).Error
 	message = "获取完成"
 	c.JSON(http.StatusOK, gin.H{
 		"code":         code,
@@ -81,7 +89,8 @@ func GetVideoDetails(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "参数缺少"})
 		return
 	}
-	videoData, _ := config.MysqlQuery("select * from video where id=?", vid)
+	videoData := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select * from video where id=?", vid).Scan(&videoData).Error
 	if len(videoData) == 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "视频不存在"})
 		return

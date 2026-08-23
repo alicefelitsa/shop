@@ -12,16 +12,21 @@ import (
 func GetProduct(c *gin.Context) {
 	var code, count int
 	var message string
-	productData, _ := config.MysqlQuery("select * from product order by id desc" + config.PageLimit(c))
+	productData := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select * from product order by id desc" + config.PageLimit(c)).Scan(&productData).Error
 	if len(productData) > 0 {
 		var domain string
-		_ = config.Mysql.QueryRow("select domain from config").Scan(&domain)
+		_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
 		for k, val := range productData {
 			productData[k]["album"] = domain + val["album"].(string)
+			if t, ok := val["ctime"].(time.Time); ok {
+				productData[k]["ctime"] = t.Format("2006-01-02 15:04:05")
+			}
 		}
 	}
-	_ = config.Mysql.QueryRow("select count(id) from product").Scan(&count)
-	categoryData, _ := config.MysqlQuery("select * from category order by id asc")
+	_ = config.Mysql.Raw("select count(id) from product").Scan(&count).Error
+	categoryData := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select * from category order by id asc").Scan(&categoryData).Error
 	message = "获取完成"
 	c.JSON(http.StatusOK, gin.H{
 		"code":         code,
@@ -36,18 +41,25 @@ func GetProduct(c *gin.Context) {
 func GetProductDetail(c *gin.Context) {
 	var code int
 	var message string
-	var relatedProducts, productData []map[string]interface{}
-	productData, _ = config.MysqlQuery("select * from product where id = ?", c.Query("id"))
+	productData := make([]map[string]interface{}, 0)
+	relatedProducts := make([]map[string]interface{}, 0)
+	_ = config.Mysql.Raw("select * from product where id = ?", c.Query("id")).Scan(&productData).Error
 	if len(productData) > 0 {
 		var domain string
-		_ = config.Mysql.QueryRow("select domain from config").Scan(&domain)
+		_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
 		for k, val := range productData {
 			productData[k]["album"] = domain + val["album"].(string)
+			if t, ok := val["ctime"].(time.Time); ok {
+				productData[k]["ctime"] = t.Format("2006-01-02 15:04:05")
+			}
 		}
-		relatedProducts, _ = config.MysqlQuery("select * from product where category=? and id != ? order by id desc limit 8", productData[0]["category"], c.Query("id"))
+		_ = config.Mysql.Raw("select * from product where category=? and id != ? order by id desc limit 8", productData[0]["category"], c.Query("id")).Scan(&relatedProducts).Error
 		if len(relatedProducts) > 0 {
 			for k, val := range relatedProducts {
 				relatedProducts[k]["album"] = domain + val["album"].(string)
+				if t, ok := val["ctime"].(time.Time); ok {
+					relatedProducts[k]["ctime"] = t.Format("2006-01-02 15:04:05")
+				}
 			}
 		}
 	}
@@ -73,14 +85,15 @@ func AddMessage(c *gin.Context) {
 		return
 	}
 	ip := c.ClientIP()
-	exec, err := config.Mysql.Exec(`insert into message (name,email,ip,ip_address,subject,content,ctime) values (?,?,?,?,?,?,?)`,
-		name, email, ip, function.GetIpAddress(ip), subject, content, time.Now().Format("2006-01-02 15:04:05"))
-	if err != nil {
+	data["ip"] = ip
+	data["ip_address"] = function.GetIpAddress(ip)
+	data["ctime"] = time.Now()
+	result := config.Mysql.Table("message").Create(data)
+	if result.Error != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": "提交失败"})
 		return
 	}
-	id, _ := exec.LastInsertId()
-	if id > 0 {
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "提交成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "提交失败"})
@@ -89,7 +102,8 @@ func AddMessage(c *gin.Context) {
 
 // GetContactInfo 获取联系方式配置
 func GetContactInfo(c *gin.Context) {
-	data, err := config.MysqlQuery("select * from contact order by id asc limit 1")
+	data := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from contact order by id asc limit 1").Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return

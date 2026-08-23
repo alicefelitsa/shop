@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"shop/config"
@@ -18,7 +18,8 @@ func AdminLogin(c *gin.Context) {
 	var code int
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	resData, err := config.MysqlQuery("select id from admin where account = ? && password = ?", data["account"], data["password"])
+	resData := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select id from admin where account = ? && password = ?", data["account"], data["password"]).Scan(&resData).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -89,7 +90,8 @@ func AuthUser(c *gin.Context) {
 	var message string
 	data := make(map[string]interface{})
 	uid, _ := config.Redis.Get(config.Ctx, c.GetHeader("Authorization")).Result()
-	resData, err := config.MysqlQuery("select * from admin where id = ?", uid)
+	resData := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from admin where id = ?", uid).Scan(&resData).Error
 	if err != nil {
 		c.JSON(500, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -131,12 +133,20 @@ func GetMessage(c *gin.Context) {
 	if where != "" {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
 	}
-	data, err := config.MysqlQuery("select * from message" + where + " order by id desc" + config.PageLimit(c))
+	data := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from message" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
-	err = config.Mysql.QueryRow("select count(id) from message" + where).Scan(&count)
+	for _, row := range data {
+		for col, val := range row {
+			if t, ok := val.(time.Time); ok {
+				row[col] = t.Format("2006-01-02 15:04:05")
+			}
+		}
+	}
+	err = config.Mysql.Raw("select count(id) from message" + where).Scan(&count).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
@@ -152,9 +162,8 @@ func GetMessage(c *gin.Context) {
 // DelMessage 删除客户留言
 func DelMessage(c *gin.Context) {
 	ids := c.Query("ids")
-	exec, _ := config.Mysql.Exec("delete from message where id " + "in(" + ids + ")")
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	result := config.Mysql.Exec("delete from message where id " + "in(" + ids + ")")
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -176,19 +185,27 @@ func GetProductList(c *gin.Context) {
 	if where != "" {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
 	}
-	data, err := config.MysqlQuery("select * from product" + where + " order by id desc" + config.PageLimit(c))
+	data := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from product" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
-	err = config.Mysql.QueryRow("select count(id) from product" + where).Scan(&count)
+	for _, row := range data {
+		for col, val := range row {
+			if t, ok := val.(time.Time); ok {
+				row[col] = t.Format("2006-01-02 15:04:05")
+			}
+		}
+	}
+	err = config.Mysql.Raw("select count(id) from product" + where).Scan(&count).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
 	}
 	if len(data) > 0 {
 		var domain string
-		_ = config.Mysql.QueryRow("select domain from config").Scan(&domain)
+		_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
 		for k, val := range data {
 			data[k]["album"] = domain + val["album"].(string)
 		}
@@ -204,7 +221,7 @@ func GetProductList(c *gin.Context) {
 // trimAlbumDomain 去掉图册地址中的平台域名前缀，避免保存时重复拼接
 func trimAlbumDomain(album string) string {
 	var domain string
-	_ = config.Mysql.QueryRow("select domain from config").Scan(&domain)
+	_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
 	if domain != "" {
 		album = strings.TrimPrefix(album, domain)
 	}
@@ -237,11 +254,10 @@ func AddProduct(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	album, _ := data["album"].(string)
-	timer := time.Now().Format("2006-01-02 15:04:05")
-	exec, _ := config.Mysql.Exec(`insert into product (name,price,level,category,Introduction,purity,album,details,ctime) values (?,?,?,?,?,?,?,?,?)`,
-		data["name"], data["price"], data["level"], data["category"], data["Introduction"], data["purity"], trimAlbumDomain(album), data["details"], timer)
-	id, _ := exec.LastInsertId()
-	if id > 0 {
+	data["album"] = trimAlbumDomain(album)
+	data["ctime"] = time.Now()
+	result := config.Mysql.Table("product").Create(data)
+	if result.Error == nil && result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -253,10 +269,9 @@ func SaveProduct(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	album, _ := data["album"].(string)
-	exec, _ := config.Mysql.Exec(`update product set name=?,price=?,level=?,category=?,Introduction=?,purity=?,album=?,details=? where id=?`,
+	result := config.Mysql.Exec(`update product set name=?,price=?,level=?,category=?,Introduction=?,purity=?,album=?,details=? where id=?`,
 		data["name"], data["price"], data["level"], data["category"], data["Introduction"], data["purity"], trimAlbumDomain(album), data["details"], data["id"])
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -266,9 +281,8 @@ func SaveProduct(c *gin.Context) {
 // DelProduct 删除产品
 func DelProduct(c *gin.Context) {
 	ids := c.Query("ids")
-	exec, _ := config.Mysql.Exec("delete from product where id " + "in(" + ids + ")")
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	result := config.Mysql.Exec("delete from product where id " + "in(" + ids + ")")
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -283,12 +297,13 @@ func GetCategory(c *gin.Context) {
 	if name != "" {
 		where = fmt.Sprintf(" where name like '%%%v%%'", name)
 	}
-	data, err := config.MysqlQuery("select * from category" + where + " order by id asc" + config.PageLimit(c))
+	data := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from category" + where + " order by id asc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
-	err = config.Mysql.QueryRow("select count(id) from category" + where).Scan(&count)
+	err = config.Mysql.Raw("select count(id) from category" + where).Scan(&count).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
@@ -305,9 +320,8 @@ func GetCategory(c *gin.Context) {
 func AddCategory(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	exec, _ := config.Mysql.Exec(`insert into category (name) values (?)`, data["name"])
-	id, _ := exec.LastInsertId()
-	if id > 0 {
+	result := config.Mysql.Table("category").Create(data)
+	if result.Error == nil && result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -318,9 +332,8 @@ func AddCategory(c *gin.Context) {
 func SaveCategory(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	exec, _ := config.Mysql.Exec(`update category set name=? where id=?`, data["name"], data["id"])
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	result := config.Mysql.Exec(`update category set name=? where id=?`, data["name"], data["id"])
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -330,9 +343,8 @@ func SaveCategory(c *gin.Context) {
 // DelCategory 删除分类
 func DelCategory(c *gin.Context) {
 	ids := c.Query("ids")
-	exec, _ := config.Mysql.Exec("delete from category where id " + "in(" + ids + ")")
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	result := config.Mysql.Exec("delete from category where id " + "in(" + ids + ")")
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -341,7 +353,8 @@ func DelCategory(c *gin.Context) {
 
 // GetContactSetting 获取联系方式配置
 func GetContactSetting(c *gin.Context) {
-	data, err := config.MysqlQuery("select * from contact order by id asc limit 1")
+	data := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from contact order by id asc limit 1").Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -361,23 +374,21 @@ func SaveContactSetting(c *gin.Context) {
 	phone, _ := data["phone"].(string)
 	address, _ := data["address"].(string)
 	businessHours, _ := data["business_hours"].(string)
-	var count int
-	_ = config.Mysql.QueryRow("select count(id) from contact").Scan(&count)
-	var exec sql.Result
-	var err error
+	var count int64
+	_ = config.Mysql.Raw("select count(id) from contact").Scan(&count).Error
+	var result *gorm.DB
 	if count == 0 {
-		exec, err = config.Mysql.Exec(`insert into contact (email,phone,address,business_hours) values (?,?,?,?)`,
+		result = config.Mysql.Exec(`insert into contact (email,phone,address,business_hours) values (?,?,?,?)`,
 			email, phone, address, businessHours)
 	} else {
-		exec, err = config.Mysql.Exec(`update contact set email=?,phone=?,address=?,business_hours=? order by id asc limit 1`,
+		result = config.Mysql.Exec(`update contact set email=?,phone=?,address=?,business_hours=? order by id asc limit 1`,
 			email, phone, address, businessHours)
 	}
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+	if result.Error != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": result.Error.Error()})
 		return
 	}
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
@@ -386,7 +397,8 @@ func SaveContactSetting(c *gin.Context) {
 
 // GetConfigSetting 获取系统配置
 func GetConfigSetting(c *gin.Context) {
-	data, err := config.MysqlQuery("select * from config order by id asc limit 1")
+	data := make([]map[string]interface{}, 0)
+	err := config.Mysql.Raw("select * from config order by id asc limit 1").Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -403,21 +415,19 @@ func SaveConfigSetting(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	domain, _ := data["domain"].(string)
-	var count int
-	_ = config.Mysql.QueryRow("select count(id) from config").Scan(&count)
-	var exec sql.Result
-	var err error
+	var count int64
+	_ = config.Mysql.Raw("select count(id) from config").Scan(&count).Error
+	var result *gorm.DB
 	if count == 0 {
-		exec, err = config.Mysql.Exec(`insert into config (domain) values (?)`, domain)
+		result = config.Mysql.Exec(`insert into config (domain) values (?)`, domain)
 	} else {
-		exec, err = config.Mysql.Exec(`update config set domain=? order by id asc limit 1`, domain)
+		result = config.Mysql.Exec(`update config set domain=? order by id asc limit 1`, domain)
 	}
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+	if result.Error != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": result.Error.Error()})
 		return
 	}
-	affected, _ := exec.RowsAffected()
-	if affected > 0 {
+	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
