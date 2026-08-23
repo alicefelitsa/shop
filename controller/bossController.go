@@ -13,13 +13,24 @@ import (
 	"time"
 )
 
+type BossController struct {
+	db *gorm.DB
+}
+
+// NewBossController 创建控制器
+func NewBossController() *BossController {
+	return &BossController{
+		db: config.Mysql,
+	}
+}
+
 // AdminLogin 管理员登录
-func AdminLogin(c *gin.Context) {
+func (bc *BossController) AdminLogin(c *gin.Context) {
 	var code int
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	resData := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select id from admin where account = ? && password = ?", data["account"], data["password"]).Scan(&resData).Error
+	err := bc.db.Raw("select id from admin where account = ? && password = ?", data["account"], data["password"]).Scan(&resData).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -43,7 +54,7 @@ func AdminLogin(c *gin.Context) {
 }
 
 // Captcha 获取登录验证码
-func Captcha(c *gin.Context) {
+func (bc *BossController) Captcha(c *gin.Context) {
 	var code int
 	var message string
 	var data map[string]interface{}
@@ -78,20 +89,20 @@ func Captcha(c *gin.Context) {
 }
 
 // AdminLogout 管理员退出
-func AdminLogout(c *gin.Context) {
+func (bc *BossController) AdminLogout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "退出登录",
 	})
 }
 
-func AuthUser(c *gin.Context) {
+func (bc *BossController) AuthUser(c *gin.Context) {
 	var code int
 	var message string
 	data := make(map[string]interface{})
 	uid, _ := config.Redis.Get(config.Ctx, c.GetHeader("Authorization")).Result()
 	resData := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select * from admin where id = ?", uid).Scan(&resData).Error
+	err := bc.db.Raw("select * from admin where id = ?", uid).Scan(&resData).Error
 	if err != nil {
 		c.JSON(500, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -115,7 +126,7 @@ func AuthUser(c *gin.Context) {
 }
 
 // GetMessage 获取客户留言列表
-func GetMessage(c *gin.Context) {
+func (bc *BossController) GetMessage(c *gin.Context) {
 	var code, count int
 	var where string
 	name := c.Query("name")
@@ -134,7 +145,7 @@ func GetMessage(c *gin.Context) {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
 	}
 	data := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select * from message" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
+	err := bc.db.Raw("select * from message" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -146,7 +157,7 @@ func GetMessage(c *gin.Context) {
 			}
 		}
 	}
-	err = config.Mysql.Raw("select count(id) from message" + where).Scan(&count).Error
+	err = bc.db.Raw("select count(id) from message" + where).Scan(&count).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
@@ -160,9 +171,9 @@ func GetMessage(c *gin.Context) {
 }
 
 // DelMessage 删除客户留言
-func DelMessage(c *gin.Context) {
+func (bc *BossController) DelMessage(c *gin.Context) {
 	ids := c.Query("ids")
-	result := config.Mysql.Exec("delete from message where id " + "in(" + ids + ")")
+	result := bc.db.Exec("delete from message where id " + "in(" + ids + ")")
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -171,7 +182,7 @@ func DelMessage(c *gin.Context) {
 }
 
 // GetProductList 获取产品列表
-func GetProductList(c *gin.Context) {
+func (bc *BossController) GetProductList(c *gin.Context) {
 	var code, count int
 	var where string
 	name := c.Query("name")
@@ -186,7 +197,7 @@ func GetProductList(c *gin.Context) {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
 	}
 	data := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select * from product" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
+	err := bc.db.Raw("select * from product" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -198,14 +209,14 @@ func GetProductList(c *gin.Context) {
 			}
 		}
 	}
-	err = config.Mysql.Raw("select count(id) from product" + where).Scan(&count).Error
+	err = bc.db.Raw("select count(id) from product" + where).Scan(&count).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
 	}
 	if len(data) > 0 {
 		var domain string
-		_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
+		_ = bc.db.Raw("select domain from config").Scan(&domain).Error
 		for k, val := range data {
 			data[k]["album"] = domain + val["album"].(string)
 		}
@@ -219,9 +230,9 @@ func GetProductList(c *gin.Context) {
 }
 
 // trimAlbumDomain 去掉图册地址中的平台域名前缀，避免保存时重复拼接
-func trimAlbumDomain(album string) string {
+func (bc *BossController) trimAlbumDomain(album string) string {
 	var domain string
-	_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
+	_ = bc.db.Raw("select domain from config").Scan(&domain).Error
 	if domain != "" {
 		album = strings.TrimPrefix(album, domain)
 	}
@@ -229,7 +240,7 @@ func trimAlbumDomain(album string) string {
 }
 
 // UploadImage 上传图片
-func UploadImage(c *gin.Context) {
+func (bc *BossController) UploadImage(c *gin.Context) {
 	filePath := "/uploads"
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -250,13 +261,13 @@ func UploadImage(c *gin.Context) {
 }
 
 // AddProduct 添加产品
-func AddProduct(c *gin.Context) {
+func (bc *BossController) AddProduct(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	album, _ := data["album"].(string)
-	data["album"] = trimAlbumDomain(album)
+	data["album"] = bc.trimAlbumDomain(album)
 	data["ctime"] = time.Now()
-	result := config.Mysql.Table("product").Create(data)
+	result := bc.db.Table("product").Create(data)
 	if result.Error == nil && result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -265,12 +276,12 @@ func AddProduct(c *gin.Context) {
 }
 
 // SaveProduct 修改产品
-func SaveProduct(c *gin.Context) {
+func (bc *BossController) SaveProduct(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	album, _ := data["album"].(string)
-	result := config.Mysql.Exec(`update product set name=?,price=?,level=?,category=?,Introduction=?,purity=?,album=?,details=? where id=?`,
-		data["name"], data["price"], data["level"], data["category"], data["Introduction"], data["purity"], trimAlbumDomain(album), data["details"], data["id"])
+	result := bc.db.Exec(`update product set name=?,price=?,level=?,category=?,Introduction=?,purity=?,album=?,details=? where id=?`,
+		data["name"], data["price"], data["level"], data["category"], data["Introduction"], data["purity"], bc.trimAlbumDomain(album), data["details"], data["id"])
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -279,9 +290,9 @@ func SaveProduct(c *gin.Context) {
 }
 
 // DelProduct 删除产品
-func DelProduct(c *gin.Context) {
+func (bc *BossController) DelProduct(c *gin.Context) {
 	ids := c.Query("ids")
-	result := config.Mysql.Exec("delete from product where id " + "in(" + ids + ")")
+	result := bc.db.Exec("delete from product where id " + "in(" + ids + ")")
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -290,7 +301,7 @@ func DelProduct(c *gin.Context) {
 }
 
 // GetCategory 获取分类列表
-func GetCategory(c *gin.Context) {
+func (bc *BossController) GetCategory(c *gin.Context) {
 	var code, count int
 	var where string
 	name := c.Query("name")
@@ -298,12 +309,12 @@ func GetCategory(c *gin.Context) {
 		where = fmt.Sprintf(" where name like '%%%v%%'", name)
 	}
 	data := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select * from category" + where + " order by id asc" + config.PageLimit(c)).Scan(&data).Error
+	err := bc.db.Raw("select * from category" + where + " order by id asc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
-	err = config.Mysql.Raw("select count(id) from category" + where).Scan(&count).Error
+	err = bc.db.Raw("select count(id) from category" + where).Scan(&count).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
 		return
@@ -317,10 +328,10 @@ func GetCategory(c *gin.Context) {
 }
 
 // AddCategory 添加分类
-func AddCategory(c *gin.Context) {
+func (bc *BossController) AddCategory(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	result := config.Mysql.Table("category").Create(data)
+	result := bc.db.Table("category").Create(data)
 	if result.Error == nil && result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -329,10 +340,10 @@ func AddCategory(c *gin.Context) {
 }
 
 // SaveCategory 修改分类
-func SaveCategory(c *gin.Context) {
+func (bc *BossController) SaveCategory(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
-	result := config.Mysql.Exec(`update category set name=? where id=?`, data["name"], data["id"])
+	result := bc.db.Exec(`update category set name=? where id=?`, data["name"], data["id"])
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -341,9 +352,9 @@ func SaveCategory(c *gin.Context) {
 }
 
 // DelCategory 删除分类
-func DelCategory(c *gin.Context) {
+func (bc *BossController) DelCategory(c *gin.Context) {
 	ids := c.Query("ids")
-	result := config.Mysql.Exec("delete from category where id " + "in(" + ids + ")")
+	result := bc.db.Exec("delete from category where id " + "in(" + ids + ")")
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
 	} else {
@@ -352,9 +363,9 @@ func DelCategory(c *gin.Context) {
 }
 
 // GetContactSetting 获取联系方式配置
-func GetContactSetting(c *gin.Context) {
+func (bc *BossController) GetContactSetting(c *gin.Context) {
 	data := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select * from contact order by id asc limit 1").Scan(&data).Error
+	err := bc.db.Raw("select * from contact order by id asc limit 1").Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -367,7 +378,7 @@ func GetContactSetting(c *gin.Context) {
 }
 
 // SaveContactSetting 保存联系方式配置
-func SaveContactSetting(c *gin.Context) {
+func (bc *BossController) SaveContactSetting(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	email, _ := data["email"].(string)
@@ -375,13 +386,13 @@ func SaveContactSetting(c *gin.Context) {
 	address, _ := data["address"].(string)
 	businessHours, _ := data["business_hours"].(string)
 	var count int64
-	_ = config.Mysql.Raw("select count(id) from contact").Scan(&count).Error
+	_ = bc.db.Raw("select count(id) from contact").Scan(&count).Error
 	var result *gorm.DB
 	if count == 0 {
-		result = config.Mysql.Exec(`insert into contact (email,phone,address,business_hours) values (?,?,?,?)`,
+		result = bc.db.Exec(`insert into contact (email,phone,address,business_hours) values (?,?,?,?)`,
 			email, phone, address, businessHours)
 	} else {
-		result = config.Mysql.Exec(`update contact set email=?,phone=?,address=?,business_hours=? order by id asc limit 1`,
+		result = bc.db.Exec(`update contact set email=?,phone=?,address=?,business_hours=? order by id asc limit 1`,
 			email, phone, address, businessHours)
 	}
 	if result.Error != nil {
@@ -396,9 +407,9 @@ func SaveContactSetting(c *gin.Context) {
 }
 
 // GetConfigSetting 获取系统配置
-func GetConfigSetting(c *gin.Context) {
+func (bc *BossController) GetConfigSetting(c *gin.Context) {
 	data := make([]map[string]interface{}, 0)
-	err := config.Mysql.Raw("select * from config order by id asc limit 1").Scan(&data).Error
+	err := bc.db.Raw("select * from config order by id asc limit 1").Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -411,17 +422,17 @@ func GetConfigSetting(c *gin.Context) {
 }
 
 // SaveConfigSetting 保存系统配置
-func SaveConfigSetting(c *gin.Context) {
+func (bc *BossController) SaveConfigSetting(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	domain, _ := data["domain"].(string)
 	var count int64
-	_ = config.Mysql.Raw("select count(id) from config").Scan(&count).Error
+	_ = bc.db.Raw("select count(id) from config").Scan(&count).Error
 	var result *gorm.DB
 	if count == 0 {
-		result = config.Mysql.Exec(`insert into config (domain) values (?)`, domain)
+		result = bc.db.Exec(`insert into config (domain) values (?)`, domain)
 	} else {
-		result = config.Mysql.Exec(`update config set domain=? order by id asc limit 1`, domain)
+		result = bc.db.Exec(`update config set domain=? order by id asc limit 1`, domain)
 	}
 	if result.Error != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": result.Error.Error()})
