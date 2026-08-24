@@ -6,8 +6,8 @@ import (
 	"shop/config"
 )
 
-// BossAuthorization 用户授权验证
-func BossAuthorization(c *gin.Context) {
+// BossAuth 用户授权验证
+func BossAuth(c *gin.Context) {
 	path := c.Request.URL.Path
 	// 白名单路径直接放行
 	if path == "/api/boss/login" || path == "/api/boss/logout" || path == "/api/boss/captcha" {

@@ -6,8 +6,8 @@ import (
 	"shop/config"
 )
 
-// UserAuthorization 用户授权验证
-func UserAuthorization(c *gin.Context) {
+// UserAuth 用户授权验证
+func UserAuth(c *gin.Context) {
 	path := c.Request.URL.Path
 	// 白名单路径直接放行
 	if path == "/api/user/login" || path == "/api/user/logout" {

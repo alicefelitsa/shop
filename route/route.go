@@ -23,7 +23,7 @@ func SetupRouter() *gin.Engine {
 			"message": "页面不存在",
 		})
 	})
-	boss := router.Group("/api/boss", middleware.BossAuthorization)
+	boss := router.Group("/api/boss", middleware.BossAuth)
 	{
 		bossController := controller.NewBossController()
 		boss.POST("/login", bossController.AdminLogin)
