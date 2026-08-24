@@ -14,8 +14,8 @@ func SetupRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 	router.Use(middleware.Cors())
 	//router.Use(middleware.NewIPRateLimiter(120, 20, 1*time.Minute))
-	//router.Use(middleware.QueueRateLimiterBlocking(config.Cj.GetInt("QueueCapacity"), config.Cj.GetInt("SuddenCapacity"), 5*time.Second))
-	//router.Use(middleware.QueueRateLimiter(config.Cj.GetInt("QueueCapacity"), config.Cj.GetInt("SuddenCapacity")))
+	//router.Use(middleware.QueueRateLimiterBlocking(config.Conf.GetInt("server.queueCapacity"), config.Conf.GetInt("server.suddenCapacity"), 5*time.Second))
+	//router.Use(middleware.QueueRateLimiter(config.Conf.GetInt("server.queueCapacity"), config.Conf.GetInt("server.suddenCapacity")))
 	//router.Use(middleware.ULimiter("10-S"))
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/time/rate"
 	"log"
 	"net/http"
+	"shop/config"
 	"sync"
 	"time"
 )
@@ -41,7 +42,7 @@ func main() {
 		ws.GET("/client", ClientWs)
 	}
 	//启动服务
-	if err := router.Run(":9000"); err != nil {
+	if err := router.Run(":" + config.Conf.GetString("server.wsPort")); err != nil {
 		log.Fatal("服务器启动失败：", err)
 	}
 }

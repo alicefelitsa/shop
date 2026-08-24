@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/go-ini/ini"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -20,11 +19,10 @@ func init() {
 
 // InitMysql 初始化Mysql连接
 func InitMysql() {
-	mysqlIni := ReadIniFile("./config/mysql.ini")
-	dbAddress := mysqlIni.Section("mysql").Key("dbAddress").Value()
-	dbName := mysqlIni.Section("mysql").Key("dbName").Value()
-	dbUser := mysqlIni.Section("mysql").Key("dbUser").Value()
-	dbPasswd := mysqlIni.Section("mysql").Key("dbPasswd").Value()
+	dbAddress := Conf.GetString("mysql.address")
+	dbName := Conf.GetString("mysql.database")
+	dbUser := Conf.GetString("mysql.user")
+	dbPasswd := Conf.GetString("mysql.password")
 	dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=true&timeout=5s&readTimeout=30s&writeTimeout=30s&interpolateParams=true", dbUser, dbPasswd, dbAddress, dbName)
 	var err error
 	Mysql, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -46,15 +44,6 @@ func InitMysql() {
 	fmt.Println("Mysql连接成功！")
 	//warmupConnections(Mysql, 10)
 	//go keepAlive(Mysql)
-}
-
-// ReadIniFile 读取ini文件的数据
-func ReadIniFile(fileName string) *ini.File {
-	iniObj, err := ini.Load(fileName)
-	if err != nil {
-		log.Fatal("获取INI文件出错：", err)
-	}
-	return iniObj
 }
 
 // PageLimit 处理Mysql数据分页

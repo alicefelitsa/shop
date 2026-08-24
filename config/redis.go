@@ -18,9 +18,9 @@ func init() {
 // InitRedis 初始化Redis连接
 func InitRedis() {
 	Redis = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // Redis 服务器地址
-		Password: "",               // 密码，没有则为空
-		DB:       0,                // 默认数据库
+		Addr:     Conf.GetString("redis.address"),  // Redis 服务器地址
+		Password: Conf.GetString("redis.password"), // 密码，没有则为空
+		DB:       Conf.GetInt("redis.db"),          // 默认数据库
 
 		// 连接池配置（可选，但生产环境推荐）
 		PoolSize:        1000,             // 连接池最大连接数

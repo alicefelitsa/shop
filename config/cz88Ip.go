@@ -15,7 +15,7 @@ func init() {
 // InitCz88Ip 初始化IP纯真社区版
 func InitCz88Ip() {
 	var err error
-	Cz88Ip, err = db.InitDBSearcher("./config/cz88_public_v4.czdb", "s4s5fO8FegK89uxtvM8seg==", db.MEMORY)
+	Cz88Ip, err = db.InitDBSearcher("./cz88_public_v4.czdb", "s4s5fO8FegK89uxtvM8seg==", db.MEMORY)
 	if err != nil {
 		log.Fatal("初始化IP纯真社区版失败: ", err)
 	}
