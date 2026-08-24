@@ -4,7 +4,6 @@ go 1.26
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-ini/ini v1.67.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/mozillazg/go-pinyin v0.21.0
 	github.com/qiniu/go-sdk/v7 v7.25.5
