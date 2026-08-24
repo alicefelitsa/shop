@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"shop/config"
-	"shop/function"
+	"shop/tools"
 	"strconv"
 	"strings"
 	"time"
@@ -26,7 +26,7 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "账号或密码错误"})
 		return
 	}
-	token := function.CreateARandomString(30)
+	token := tools.CreateARandomString(30)
 	err := config.Redis.Set(config.Ctx, token, resData[0]["id"], time.Minute*43200).Err()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "登录令牌创建失败：" + err.Error()})

@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 	"shop/config"
-	"shop/function"
+	"shop/tools"
 	"strings"
 	"time"
 )
@@ -39,7 +39,7 @@ func (bc *BossController) AdminLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "账户或密码不正确"})
 		return
 	}
-	token := function.CreateARandomString(30)
+	token := tools.CreateARandomString(30)
 	err = config.Redis.Set(config.Ctx, token, resData[0]["id"], time.Minute*43200).Err()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "创建授权令牌失败：" + err.Error()})
@@ -247,7 +247,7 @@ func (bc *BossController) UploadImage(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "获取上传文件失败"})
 		return
 	}
-	fileName, fileUrl, err := function.SaveImageFile(c, "."+filePath, file)
+	fileName, fileUrl, err := tools.SaveImageFile(c, "."+filePath, file)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "上传失败：" + err.Error()})
 		return

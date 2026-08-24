@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"shop/config"
-	"shop/function"
+	"shop/tools"
 	"time"
 )
 
@@ -98,7 +98,7 @@ func (wc *WebController) AddMessage(c *gin.Context) {
 	}
 	ip := c.ClientIP()
 	data["ip"] = ip
-	data["ip_address"] = function.GetIpAddress(ip)
+	data["ip_address"] = tools.GetIpAddress(ip)
 	data["ctime"] = time.Now()
 	result := wc.db.Table("message").Create(data)
 	if result.Error != nil {
