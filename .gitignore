@@ -24,6 +24,7 @@ desktop.ini
 *.dylib
 *.test
 *.out
+shop
 
 # ===========================
 # 日志
