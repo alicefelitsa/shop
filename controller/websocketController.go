@@ -144,7 +144,7 @@ func (manager *ClientManager) checkHeartbeat() {
 	}
 }
 
-// UserWs 用户WebSocket连接
+// UserWs 客服端WebSocket连接
 func UserWs(c *gin.Context) {
 	ucode := c.Query("ucode")
 	if ucode == "" {
@@ -185,7 +185,7 @@ func UserWs(c *gin.Context) {
 	go client.readPump(ucode)
 }
 
-// ClientWs 客户端WebSocket连接
+// ClientWs 用户端WebSocket连接
 func ClientWs(c *gin.Context) {
 	uuid := c.Query("uuid")
 	ucode := c.Query("ucode")
