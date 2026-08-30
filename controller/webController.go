@@ -28,7 +28,7 @@ func (wc *WebController) GetProduct(c *gin.Context) {
 	_ = wc.db.Raw("select * from product order by id desc" + config.PageLimit(c)).Scan(&productData).Error
 	if len(productData) > 0 {
 		var domain string
-		_ = config.Mysql.Raw("select domain from config").Scan(&domain).Error
+		_ = wc.db.Raw("select domain from config").Scan(&domain).Error
 		for k, val := range productData {
 			productData[k]["album"] = domain + val["album"].(string)
 			if t, ok := val["ctime"].(time.Time); ok {
