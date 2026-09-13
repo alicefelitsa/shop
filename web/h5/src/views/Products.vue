@@ -19,23 +19,54 @@
       <div class="container">
         <!-- Filters Bar -->
         <div class="filters-bar">
-          <div class="filter-categories">
-            <button
-                class="filter-btn"
-                :class="{ active: activeCategory === 'all' }"
-                @click="setCategory('all')"
-            >
-              All Products
-            </button>
-            <button
-                v-for="cat in categories"
-                :key="cat.id"
-                class="filter-btn"
-                :class="{ active: activeCategory === cat.name }"
-                @click="setCategory(cat.name)"
-            >
-              {{ cat.name }}
-            </button>
+          <div class="filter-main">
+            <div class="filter-categories">
+              <button
+                  class="filter-btn"
+                  :class="{ active: activeCategory === 'all' }"
+                  @click="setCategory('all')"
+              >
+                All Products
+              </button>
+              <!-- 当前选中的分类以可清除的胶囊展示，避免为它单独占一屏 -->
+              <button
+                  v-if="activeCategory !== 'all'"
+                  class="filter-btn active"
+                  @click="setCategory('all')"
+              >
+                {{ activeCategory }}
+                <span class="clear-x">✕</span>
+              </button>
+              <button
+                  class="filter-btn cat-toggle"
+                  :class="{ open: showCategories }"
+                  @click="showCategories = !showCategories"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                </svg>
+                Categories
+                <span class="cat-total">{{ categories.length }}</span>
+                <span class="cat-caret" :class="{ open: showCategories }">▾</span>
+              </button>
+            </div>
+            <!-- 分类面板：默认收起，展开后在限高卡片内滚动浏览，不再铺满首屏 -->
+            <transition name="cat-panel">
+              <div v-if="showCategories" class="category-panel">
+                <div class="category-panel-scroll">
+                  <button
+                      v-for="cat in categories"
+                      :key="cat.id"
+                      class="cat-chip"
+                      :class="{ active: activeCategory === cat.name }"
+                      @click="pickCategory(cat.name)"
+                  >
+                    {{ cat.name }}
+                    <span class="cat-count">{{ categoryCounts[cat.name] || 0 }}</span>
+                  </button>
+                </div>
+              </div>
+            </transition>
           </div>
           <div class="filter-search">
             <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -125,6 +156,8 @@ export default {
       allProducts: [],
       categories: [],
       activeCategory: 'all',
+      // 分类面板展开状态（默认收起，防止 68 个分类铺满首屏）
+      showCategories: false,
       searchQuery: '',
       sortBy: 'default',
       // 接口加载中，避免加载完成前误显示 No products found
@@ -134,6 +167,14 @@ export default {
     }
   },
   computed: {
+    // 各分类下的产品数量（分类面板胶囊右侧角标）
+    categoryCounts() {
+      const map = {}
+      for (const p of this.allProducts) {
+        map[p.category] = (map[p.category] || 0) + 1
+      }
+      return map
+    },
     filteredProducts() {
       let result = [...this.allProducts]
 
@@ -237,6 +278,11 @@ export default {
         })
       }
     },
+    // 从分类面板选中分类后收起面板
+    pickCategory(name) {
+      this.setCategory(name)
+      this.showCategories = false
+    },
     resetFilters() {
       this.activeCategory = 'all'
       this.searchQuery = ''
@@ -307,11 +353,16 @@ export default {
 /* ===== Filters Bar ===== */
 .filters-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+}
+
+.filter-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .filter-categories {
@@ -341,6 +392,140 @@ export default {
   background: var(--primary);
   color: #fff;
   border-color: var(--primary);
+}
+
+.filter-btn .clear-x {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Categories 下拉按钮 */
+.cat-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cat-toggle.open {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.cat-total {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(15, 36, 64, 0.07);
+  color: var(--text-secondary);
+}
+
+.cat-caret {
+  font-size: 0.68rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.cat-caret.open {
+  transform: rotate(180deg);
+}
+
+/* 分类面板：限高卡片内滚动，替代原先铺满首屏的分类墙 */
+.category-panel {
+  position: relative;
+  margin-top: 12px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(15, 36, 64, 0.08);
+  overflow: hidden;
+}
+
+.category-panel-scroll {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 16px 22px;
+  max-height: 264px;
+  overflow-y: auto;
+}
+
+.category-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.category-panel-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.category-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}
+
+/* 底部渐隐提示可继续滚动 */
+.category-panel::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 6px;
+  bottom: 0;
+  height: 26px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-white));
+}
+
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cat-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.cat-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.cat-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: rgba(15, 36, 64, 0.06);
+  color: var(--text-light);
+}
+
+.cat-chip.active .cat-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+/* 面板展开/收起动画（Vue2 transition 类名） */
+.cat-panel-enter-active,
+.cat-panel-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.cat-panel-enter,
+.cat-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .filter-search {
@@ -582,6 +767,16 @@ export default {
   .filter-categories {
     flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .category-panel-scroll {
+    max-height: 220px;
+    padding: 12px 12px 18px;
+  }
+
+  .cat-chip {
+    padding: 5px 11px;
+    font-size: 0.76rem;
   }
 
   .filter-btn {

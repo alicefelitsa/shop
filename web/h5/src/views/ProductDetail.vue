@@ -88,13 +88,29 @@
           </div>
 
           <!-- Specifications -->
-          <div class="info-block" v-if="product.purity">
-            <h3 class="info-block-title">Specifications</h3>
-            <div class="specs-table">
-              <div class="spec-row">
-                <span class="spec-label">Purity</span>
-                <span class="spec-value">{{ product.purity }}</span>
-              </div>
+          <div class="info-block" v-if="specRows.length || product.purity">
+            <h3 class="info-block-title">Specifications (per kit)</h3>
+            <div class="spec-scroll">
+              <table class="spec-grid">
+                <thead>
+                <tr>
+                  <th>Specification</th>
+                  <th>Item No.</th>
+                  <th>Price</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(row, idx) in specRows" :key="idx">
+                  <td>{{ row.spec }}</td>
+                  <td>{{ row.item || '—' }}</td>
+                  <td class="spec-price">{{ row.price }}</td>
+                </tr>
+                <tr v-if="product.purity">
+                  <td>Purity</td>
+                  <td colspan="2">{{ product.purity }}</td>
+                </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -156,10 +172,63 @@ export default {
     }
   },
   computed: {
-    // 接口返回的详情描述按段落拆分
+    // 规格表格行：优先读独立字段 product.specs（后端 JSON 数组），缺失/解析失败时回退解析 details
+    specRows() {
+      if (!this.product) return []
+      // 1) 独立 specs 字段（[{spec,item,price}...]）
+      if (this.product.specs) {
+        try {
+          const arr = JSON.parse(this.product.specs)
+          if (Array.isArray(arr) && arr.length) {
+            return arr.map(r => ({
+              spec: (r && r.spec) || '',
+              item: (r && r.item) || '',
+              price: (r && r.price) || ''
+            }))
+          }
+        } catch (e) {
+          // JSON 解析失败，回退到 details 解析
+        }
+      }
+      // 2) 回退：兼容旧库或后台新录产品——从 details 首段解析 规格 | 货号 | 价格
+      if (!this.product.details) return []
+      const lines = this.product.details.split('\n').map(s => s.trim())
+      const rows = []
+      let started = false
+      for (const line of lines) {
+        if (!line) {
+          if (started) break
+          continue
+        }
+        if (!line.includes('|')) {
+          // 规格行之前的表头（如 "Specifications (per kit):"）跳过；开始后再遇非规格行即结束
+          if (started) break
+          continue
+        }
+        started = true
+        const parts = line.split('|').map(s => s.trim())
+        if (parts.length >= 3) {
+          rows.push({
+            spec: parts[0],
+            item: parts[1].replace(/^Item No\.?\s*:?\s*/i, ''),
+            price: parts.slice(2).join(' | ')
+          })
+        } else {
+          // 个别历史数据缺少货号列，仅两列
+          rows.push({spec: parts[0], item: '', price: parts[1] || ''})
+        }
+      }
+      return rows
+    },
+    // 接口返回的详情描述按段落拆分（规格块改由表格呈现，此处仅保留介绍段落）
     detailParagraphs() {
       if (!this.product || !this.product.details) return []
-      return this.product.details.split('\n').map(s => s.trim()).filter(Boolean)
+      const lines = this.product.details.split('\n').map(s => s.trim())
+      const firstSpec = lines.findIndex(l => l.includes('|'))
+      if (firstSpec === -1) return lines.filter(l => l && !/^specifications/i.test(l))
+      const end = lines.findIndex((l, i) => i >= firstSpec && l === '')
+      if (end === -1) return []
+      return lines.slice(end).filter(Boolean)
     }
   },
   watch: {
@@ -490,37 +559,53 @@ export default {
   transform: translateY(-1px);
 }
 
-.specs-table {
+.spec-scroll {
+  overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  background: #fff;
 }
 
-.spec-row {
-  display: flex;
+.spec-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.spec-grid th,
+.spec-grid td {
+  padding: 12px 18px;
+  text-align: left;
   border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+  color: var(--text-secondary);
 }
 
-.spec-row:last-child {
+.spec-grid thead th {
+  background: var(--bg-light);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.spec-grid tbody td:first-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.spec-grid tbody tr:nth-child(even) {
+  background: var(--bg-light);
+}
+
+.spec-grid tbody tr:last-child td {
   border-bottom: none;
 }
 
-.spec-label {
-  width: 200px;
-  flex-shrink: 0;
-  padding: 14px 20px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  background: var(--bg-light);
-  text-transform: capitalize;
-}
-
-.spec-value {
-  flex: 1;
-  padding: 14px 20px;
-  font-size: 0.88rem;
-  color: var(--text-secondary);
+.spec-grid .spec-price {
+  font-weight: 700;
+  color: var(--primary);
 }
 
 /* ===== Related ===== */
@@ -699,19 +784,13 @@ export default {
     margin-top: 26px;
   }
 
-  .spec-row {
-    flex-direction: column;
-  }
-
-  .spec-label {
-    width: 100%;
-    padding: 8px 14px;
+  .spec-grid {
     font-size: 0.82rem;
   }
 
-  .spec-value {
-    padding: 8px 14px;
-    font-size: 0.82rem;
+  .spec-grid th,
+  .spec-grid td {
+    padding: 9px 12px;
   }
 
   .related-section {
