@@ -36,5 +36,7 @@ export default {
   flex: 1;
   overflow-x: hidden;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 </style>

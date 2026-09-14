@@ -95,8 +95,10 @@
             <select v-model="sortBy" class="sort-select">
               <option value="default">Default</option>
               <option value="name">Name A–Z</option>
+              <!-- 价格排序选项已暂时隐藏
               <option value="price-asc">Price: Low to High</option>
               <option value="price-desc">Price: High to Low</option>
+              -->
               <option value="rating">Highest Rated</option>
             </select>
           </div>

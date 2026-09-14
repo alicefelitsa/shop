@@ -197,7 +197,7 @@ func (bc *BossController) GetProductList(c *gin.Context) {
 		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
 	}
 	data := make([]map[string]interface{}, 0)
-	err := bc.db.Raw("select * from product" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
+	err := bc.db.Raw("select * from product" + where + " order by id asc" + config.PageLimit(c)).Scan(&data).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -426,13 +426,18 @@ func (bc *BossController) SaveConfigSetting(c *gin.Context) {
 	data := make(map[string]interface{})
 	_ = c.BindJSON(&data)
 	domain, _ := data["domain"].(string)
+	// 访问方式：仅允许 pc/h5/all，非法或缺省回落到 all
+	accessMode, _ := data["access_mode"].(string)
+	if accessMode != "pc" && accessMode != "h5" && accessMode != "all" {
+		accessMode = "all"
+	}
 	var count int64
 	_ = bc.db.Raw("select count(id) from config").Scan(&count).Error
 	var result *gorm.DB
 	if count == 0 {
-		result = bc.db.Exec(`insert into config (domain) values (?)`, domain)
+		result = bc.db.Exec(`insert into config (domain, access_mode) values (?, ?)`, domain, accessMode)
 	} else {
-		result = bc.db.Exec(`update config set domain=? order by id asc limit 1`, domain)
+		result = bc.db.Exec(`update config set domain=?, access_mode=? order by id asc limit 1`, domain, accessMode)
 	}
 	if result.Error != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": result.Error.Error()})

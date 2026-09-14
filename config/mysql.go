@@ -23,7 +23,7 @@ func InitMysql() {
 	dbName := Conf.GetString("mysql.database")
 	dbUser := Conf.GetString("mysql.user")
 	dbPasswd := Conf.GetString("mysql.password")
-	dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=true&timeout=5s&readTimeout=30s&writeTimeout=30s&interpolateParams=true", dbUser, dbPasswd, dbAddress, dbName)
+	dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=true&loc=Asia%%2FShanghai&timeout=5s&readTimeout=30s&writeTimeout=30s&interpolateParams=true", dbUser, dbPasswd, dbAddress, dbName)
 	var err error
 	Mysql, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

@@ -4,8 +4,10 @@
       <div class="header-inner container">
         <!-- Logo -->
         <router-link to="/" class="logo" @click.native="closeMenu">
-          <span class="logo-icon">⬡</span>
-          <span class="logo-text">HKR<span class="logo-accent">oids</span></span>
+<!--          <span class="logo-icon">⬡</span>-->
+          <span class="logo-icon">🌍</span>
+<!--          <span class="logo-text">HKR<span class="logo-accent">oids</span></span>-->
+          <span class="logo-text">Utit<span class="logo-accent">anu 🔥</span></span>
         </router-link>
 
         <!-- Desktop Navigation -->
@@ -24,7 +26,7 @@
         <!-- Header Actions -->
         <div class="header-actions">
           <router-link to="/contact" class="btn btn-accent btn-sm header-cta" @click.native="closeMenu">
-            Get Quote
+            Get Quote 🛒
           </router-link>
 
           <!-- Hamburger -->

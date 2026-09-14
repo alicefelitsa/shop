@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import {checkAccess} from '@/utils/access'
 
 Vue.use(VueRouter)
 
@@ -30,6 +31,11 @@ const routes = [
     component: () => import('../views/Contact.vue')
   },
   {
+    path: '/notice',
+    name: 'Notice',
+    component: () => import('../views/Notice.vue')
+  },
+  {
     path: '*',
     name: 'NotFound',
     component: () => import('../views/NotFound.vue')
@@ -44,6 +50,14 @@ const router = new VueRouter({
     if (savedPosition) return savedPosition
     return { x: 0, y: 0 }
   }
+})
+
+// 访问方式拦截：与后台配置的 access_mode 不匹配时跳转提示页
+router.beforeEach(async (to, from, next) => {
+  if (to.name === 'Notice') return next()
+  const {allowed, mode} = await checkAccess()
+  if (!allowed) return next({name: 'Notice', query: {mode}})
+  next()
 })
 
 export default router

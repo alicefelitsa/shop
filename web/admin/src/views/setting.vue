@@ -9,6 +9,13 @@
           <el-form-item label="网站域名">
             <el-input v-model="form.domain" placeholder="如：http://127.0.0.1:8100"></el-input>
           </el-form-item>
+          <el-form-item label="访问方式">
+            <el-radio-group v-model="form.access_mode">
+              <el-radio label="pc">PC</el-radio>
+              <el-radio label="h5">H5</el-radio>
+              <el-radio label="all">全部</el-radio>
+            </el-radio-group>
+          </el-form-item>
           <el-form-item class="setting-submit">
             <el-button type="primary" icon="el-icon-check" :loading="saving" @click="save">保存</el-button>
             <span class="setting-tip">域名用于前台产品图片等资源地址的拼接</span>
@@ -29,7 +36,8 @@ export default {
       loading: false,
       saving: false,
       form: {
-        domain: ''
+        domain: '',
+        access_mode: 'all'
       }
     }
   },
@@ -44,7 +52,8 @@ export default {
         let data = await GetConfigSetting()
         if (data && data.length > 0) {
           this.form = {
-            domain: data[0].domain || ''
+            domain: data[0].domain || '',
+            access_mode: data[0].access_mode || 'all'
           }
         }
       } catch (e) {

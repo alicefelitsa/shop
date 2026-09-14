@@ -54,6 +54,7 @@ func SetupRouter() *gin.Engine {
 		web.GET("/GetProductDetail", webController.GetProductDetail)
 		web.POST("/AddMessage", webController.AddMessage)
 		web.GET("/GetContactInfo", webController.GetContactInfo)
+		web.GET("/GetSiteConfig", webController.GetSiteConfig)
 
 	}
 	//上传的图片静态服务（URL 前缀需与 UploadImage 返回的 url 保持一致）

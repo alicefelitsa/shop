@@ -25,7 +25,7 @@ func (wc *WebController) GetProduct(c *gin.Context) {
 	var code, count int
 	var message string
 	productData := make([]map[string]interface{}, 0)
-	_ = wc.db.Raw("select * from product order by id desc" + config.PageLimit(c)).Scan(&productData).Error
+	_ = wc.db.Raw("select * from product order by id asc" + config.PageLimit(c)).Scan(&productData).Error
 	if len(productData) > 0 {
 		var domain string
 		_ = wc.db.Raw("select domain from config").Scan(&domain).Error
@@ -65,7 +65,7 @@ func (wc *WebController) GetProductDetail(c *gin.Context) {
 				productData[k]["ctime"] = t.Format("2006-01-02 15:04:05")
 			}
 		}
-		_ = wc.db.Raw("select * from product where category=? and id != ? order by id desc limit 8", productData[0]["category"], c.Query("id")).Scan(&relatedProducts).Error
+		_ = wc.db.Raw("select * from product where category=? and id != ? order by id asc limit 8", productData[0]["category"], c.Query("id")).Scan(&relatedProducts).Error
 		if len(relatedProducts) > 0 {
 			for k, val := range relatedProducts {
 				relatedProducts[k]["album"] = domain + val["album"].(string)
@@ -124,5 +124,19 @@ func (wc *WebController) GetContactInfo(c *gin.Context) {
 		"code":    0,
 		"message": "操作成功",
 		"data":    data,
+	})
+}
+
+// GetSiteConfig 获取站点公开配置（访问方式）
+func (wc *WebController) GetSiteConfig(c *gin.Context) {
+	var accessMode string
+	_ = wc.db.Raw("select access_mode from config order by id asc limit 1").Scan(&accessMode).Error
+	if accessMode == "" {
+		accessMode = "all"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "操作成功",
+		"data":    gin.H{"access_mode": accessMode},
 	})
 }

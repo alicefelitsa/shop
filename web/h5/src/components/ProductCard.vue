@@ -24,9 +24,18 @@
         </div>
         <span v-if="product.purity" class="card-purity">{{ product.purity }} Purity</span>
       </div>
+      <!-- 货号展示：item_no 逗号分隔，最多显示 3 个，超出折叠为 +N -->
+      <div v-if="itemCodes.length" class="card-items">
+        <span class="item-chips">
+          <span v-for="(code, i) in itemCodes.slice(0, 3)" :key="i" class="item-chip">{{ code }}</span>
+          <span v-if="itemCodes.length > 3" class="item-chip item-more">+{{ itemCodes.length - 3 }}</span>
+        </span>
+      </div>
+      <!-- 价格展示已暂时隐藏
       <div class="card-price">
         <span class="price-range">{{ product.price }}</span>
       </div>
+      -->
     </div>
   </router-link>
 </template>
@@ -38,6 +47,12 @@ export default {
     product: {
       type: Object,
       required: true
+    }
+  },
+  computed: {
+    // 货号：item_no 逗号分隔字符串拆成数组，去空白与空值
+    itemCodes() {
+      return (this.product.item_no || '').split(',').map(s => s.trim()).filter(Boolean)
     }
   }
 }
@@ -228,6 +243,46 @@ export default {
   color: var(--primary);
 }
 
+/* Item No. 货号标签 */
+.card-items {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+
+.items-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+}
+
+.item-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.item-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(15, 36, 64, 0.06);
+  border: 1px solid var(--border-color);
+}
+
+.item-chip.item-more {
+  color: var(--text-secondary);
+  background: transparent;
+}
+
 @media (max-width: 767px) {
   .card-image {
     aspect-ratio: 4 / 3;
@@ -280,6 +335,16 @@ export default {
 
   .card-price {
     padding-top: 6px;
+  }
+
+  .card-items {
+    padding-top: 6px;
+    gap: 4px;
+  }
+
+  .item-chip {
+    font-size: 0.74rem;
+    padding: 2px 7px;
   }
 
   .price-range {

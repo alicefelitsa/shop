@@ -31,9 +31,17 @@
               <span class="rating-text">{{ Number(product.level).toFixed(1) }}</span>
             </div>
 
-            <!-- Price -->
+            <!-- 价格展示已暂时隐藏
             <div class="detail-price">
               <span class="price-range">{{ product.price }}</span>
+            </div>
+            -->
+
+            <!-- 货号展示（主信息区）：item_no 逗号分隔，全部以标签呈现 -->
+            <div v-if="itemCodes.length" class="detail-items">
+              <div class="item-chips">
+                <span v-for="(code, i) in itemCodes" :key="i" class="item-chip">{{ code }}</span>
+              </div>
             </div>
 
             <!-- Description -->
@@ -87,6 +95,14 @@
             <p v-else class="info-text">{{ product.Introduction }}</p>
           </div>
 
+          <!-- Item Numbers（货号汇总） -->
+          <div class="info-block" v-if="itemCodes.length">
+            <h3 class="info-block-title">Item Numbers</h3>
+            <div class="item-chips item-chips-lg">
+              <span v-for="(code, i) in itemCodes" :key="i" class="item-chip">{{ code }}</span>
+            </div>
+          </div>
+
           <!-- Specifications -->
           <div class="info-block" v-if="specRows.length || product.purity">
             <h3 class="info-block-title">Specifications (per kit)</h3>
@@ -95,19 +111,19 @@
                 <thead>
                 <tr>
                   <th>Specification</th>
-                  <th>Item No.</th>
-                  <th>Price</th>
+                  <th>No.</th>
+                  <!-- 价格列已暂时隐藏 <th>Price</th> -->
                 </tr>
                 </thead>
                 <tbody>
                 <tr v-for="(row, idx) in specRows" :key="idx">
                   <td>{{ row.spec }}</td>
                   <td>{{ row.item || '—' }}</td>
-                  <td class="spec-price">{{ row.price }}</td>
+                  <!-- 价格列已暂时隐藏 <td class="spec-price">{{ row.price }}</td> -->
                 </tr>
                 <tr v-if="product.purity">
                   <td>Purity</td>
-                  <td colspan="2">{{ product.purity }}</td>
+                  <td colspan="1">{{ product.purity }}</td>
                 </tr>
                 </tbody>
               </table>
@@ -172,6 +188,11 @@ export default {
     }
   },
   computed: {
+    // 货号：item_no 逗号分隔字符串拆成数组，去空白与空值
+    itemCodes() {
+      if (!this.product) return []
+      return (this.product.item_no || '').split(',').map(s => s.trim()).filter(Boolean)
+    },
     // 规格表格行：优先读独立字段 product.specs（后端 JSON 数组），缺失/解析失败时回退解析 details
     specRows() {
       if (!this.product) return []
@@ -423,6 +444,48 @@ export default {
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--primary);
+}
+
+/* Item No. 货号标签 */
+.detail-items {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.items-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding-top: 4px;
+}
+
+.item-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.item-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(15, 36, 64, 0.06);
+  border: 1px solid var(--border-color);
+}
+
+.item-chips-lg .item-chip {
+  font-size: 0.85rem;
+  padding: 5px 13px;
 }
 
 .detail-desc {
