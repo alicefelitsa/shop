@@ -431,13 +431,20 @@ func (bc *BossController) SaveConfigSetting(c *gin.Context) {
 	if accessMode != "pc" && accessMode != "h5" && accessMode != "all" {
 		accessMode = "all"
 	}
+	// 展示类型：仅允许 blank/jump，非法或缺省回落到 jump
+	displayType, _ := data["display_type"].(string)
+	if displayType != "blank" && displayType != "jump" {
+		displayType = "jump"
+	}
 	var count int64
 	_ = bc.db.Raw("select count(id) from config").Scan(&count).Error
 	var result *gorm.DB
 	if count == 0 {
-		result = bc.db.Exec(`insert into config (domain, access_mode) values (?, ?)`, domain, accessMode)
+		result = bc.db.Exec(`insert into config (domain, access_mode, display_type) values (?, ?, ?)`,
+			domain, accessMode, displayType)
 	} else {
-		result = bc.db.Exec(`update config set domain=?, access_mode=? order by id asc limit 1`, domain, accessMode)
+		result = bc.db.Exec(`update config set domain=?, access_mode=?, display_type=? order by id asc limit 1`,
+			domain, accessMode, displayType)
 	}
 	if result.Error != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 500, "message": result.Error.Error()})

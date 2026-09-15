@@ -127,16 +127,25 @@ func (wc *WebController) GetContactInfo(c *gin.Context) {
 	})
 }
 
-// GetSiteConfig 获取站点公开配置（访问方式）
+// GetSiteConfig 获取站点公开配置（访问方式、展示类型）
 func (wc *WebController) GetSiteConfig(c *gin.Context) {
-	var accessMode string
-	_ = wc.db.Raw("select access_mode from config order by id asc limit 1").Scan(&accessMode).Error
-	if accessMode == "" {
-		accessMode = "all"
+	var cfg struct {
+		AccessMode  string
+		DisplayType string
+	}
+	_ = wc.db.Raw("select access_mode, display_type from config order by id asc limit 1").Scan(&cfg).Error
+	if cfg.AccessMode == "" {
+		cfg.AccessMode = "all"
+	}
+	if cfg.DisplayType == "" {
+		cfg.DisplayType = "jump"
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "操作成功",
-		"data":    gin.H{"access_mode": accessMode},
+		"data": gin.H{
+			"access_mode":  cfg.AccessMode,
+			"display_type": cfg.DisplayType,
+		},
 	})
 }

@@ -16,6 +16,13 @@
               <el-radio label="all">全部</el-radio>
             </el-radio-group>
           </el-form-item>
+          <el-form-item label="展示类型">
+            <el-radio-group v-model="form.display_type">
+              <el-radio label="blank">空白</el-radio>
+              <el-radio label="jump">跳转</el-radio>
+            </el-radio-group>
+            <div class="setting-tip setting-tip-block">访问方式不匹配时，跳转展示提示页，空白展示空白页</div>
+          </el-form-item>
           <el-form-item class="setting-submit">
             <el-button type="primary" icon="el-icon-check" :loading="saving" @click="save">保存</el-button>
             <span class="setting-tip">域名用于前台产品图片等资源地址的拼接</span>
@@ -37,7 +44,8 @@ export default {
       saving: false,
       form: {
         domain: '',
-        access_mode: 'all'
+        access_mode: 'all',
+        display_type: 'jump'
       }
     }
   },
@@ -53,7 +61,8 @@ export default {
         if (data && data.length > 0) {
           this.form = {
             domain: data[0].domain || '',
-            access_mode: data[0].access_mode || 'all'
+            access_mode: data[0].access_mode || 'all',
+            display_type: data[0].display_type || 'jump'
           }
         }
       } catch (e) {
@@ -98,6 +107,11 @@ export default {
   margin-top: 10px;
 }
 
+/* 访问方式/展示类型单选文字加深突出（选中态仍保留主题蓝） */
+.setting-form >>> .el-radio__label {
+  color: #303133;
+}
+
 .setting-form >>> .el-form-item {
   margin-bottom: 20px;
 }
@@ -112,5 +126,13 @@ export default {
   margin-left: 12px;
   font-size: 12px;
   color: #909399;
+}
+
+/* 展示类型提示语单独一行置于单选组下方：去掉左缩进并换行 */
+.setting-tip-block {
+  display: block;
+  margin-left: 0;
+  margin-top: 2px;
+  line-height: 1.6;
 }
 </style>

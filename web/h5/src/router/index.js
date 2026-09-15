@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import {checkAccess} from '@/utils/access'
+import {checkAccess, accessState} from '@/utils/access'
 
 Vue.use(VueRouter)
 
@@ -52,11 +52,24 @@ const router = new VueRouter({
   }
 })
 
-// 访问方式拦截：与后台配置的 access_mode 不匹配时跳转提示页
+// 访问方式拦截：与后台配置的 access_mode 不匹配时按展示类型原地空白或跳转提示页
 router.beforeEach(async (to, from, next) => {
-  if (to.name === 'Notice') return next()
-  const {allowed, mode} = await checkAccess()
-  if (!allowed) return next({name: 'Notice', query: {mode}})
+  if (to.name === 'Notice') {
+    accessState.ready = true
+    return next()
+  }
+  const {allowed, mode, displayType} = await checkAccess()
+  if (!allowed) {
+    if (displayType === 'blank') {
+      // 不改变 URL，仅置空白状态由 App.vue 渲染空页
+      accessState.blank = true
+      accessState.ready = true
+      return next()
+    }
+    accessState.ready = true
+    return next({name: 'Notice', query: {mode}})
+  }
+  accessState.ready = true
   next()
 })
 
