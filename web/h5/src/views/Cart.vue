@@ -557,7 +557,7 @@ export default {
 
 .intent-textarea {
   resize: vertical;
-  margin-bottom: 20px;
+  margin-bottom: 21px;
 }
 
 .intent-error {
@@ -572,7 +572,6 @@ export default {
   margin: 0 -24px -24px;
   padding: 14px 24px 16px;
   background: var(--bg-white);
-  box-shadow: 0 -10px 24px rgba(15, 36, 64, 0.08);
 }
 
 .intent-actions-row {
