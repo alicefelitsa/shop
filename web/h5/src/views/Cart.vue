@@ -93,7 +93,8 @@
         <label class="intent-label">Email / WhatsApp *</label>
         <input v-model.trim="form.email" class="intent-input" type="text" placeholder="How can we reach you?"/>
         <label class="intent-label">Remark *</label>
-        <textarea v-model.trim="form.remark" class="intent-input intent-textarea" rows="3" placeholder="Anything we should know?"></textarea>
+        <textarea v-model.trim="form.remark" class="intent-input intent-textarea" rows="3"
+                  placeholder="Anything we should know?"></textarea>
 
         <div class="intent-actions">
           <p v-if="submitError" class="intent-error">{{ submitError }}</p>
@@ -110,7 +111,7 @@
 </template>
 
 <script>
-import {cartState, cart} from '@/utils/cart'
+import {cart, cartState} from '@/utils/cart'
 import {AddCartIntent} from '@/api/intent'
 
 export default {
@@ -570,7 +571,7 @@ export default {
   position: sticky;
   bottom: 0;
   margin: 0 -24px -24px;
-  padding: 14px 24px 16px;
+  padding: 14px 24px 0;
   background: var(--bg-white);
 }
 
