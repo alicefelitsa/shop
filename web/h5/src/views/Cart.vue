@@ -451,7 +451,7 @@ export default {
 .intent-modal {
   position: relative;
   width: 100%;
-  max-width: 460px;
+  max-width: 520px;
   max-height: 84vh;
   overflow-y: auto;
   background: var(--bg-white);
@@ -558,7 +558,7 @@ export default {
 
 .intent-textarea {
   resize: vertical;
-  margin-bottom: 21px;
+  margin-bottom: 0;
 }
 
 .intent-error {
@@ -569,10 +569,13 @@ export default {
 
 .intent-actions {
   position: sticky;
-  bottom: 0;
+  /*bottom: 0;
   margin: 0 -24px -24px;
-  padding: 14px 24px 0;
+  padding: 14px 24px 0;*/
   background: var(--bg-white);
+  bottom: -24px;
+  margin: 10px -24px -24px;
+  padding: 0 24px 20px;
 }
 
 .intent-actions-row {
