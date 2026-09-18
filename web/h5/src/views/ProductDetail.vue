@@ -31,33 +31,58 @@
               <span class="rating-text">{{ Number(product.level).toFixed(1) }}</span>
             </div>
 
-            <!-- 价格展示已暂时隐藏
             <div class="detail-price">
               <span class="price-range">{{ product.price }}</span>
             </div>
-            -->
 
-            <!-- 货号展示（主信息区）：item_no 逗号分隔，全部以标签呈现 -->
+            <!-- 货号选择（主信息区）：点击选中某个货号后才可加购 -->
             <div v-if="itemCodes.length" class="detail-items">
               <div class="item-chips">
-                <span v-for="(code, i) in itemCodes" :key="i" class="item-chip">{{ code }}</span>
+                <span
+                    v-for="(code, i) in itemCodes"
+                    :key="i"
+                    class="item-chip item-chip-selectable"
+                    :class="{ selected: selectedItem === code }"
+                    @click="selectItem(code)"
+                >{{ code }}</span>
               </div>
             </div>
 
             <!-- Description -->
             <p class="detail-desc">{{ product.Introduction }}</p>
 
-            <!-- Purity Badge -->
-            <div v-if="product.purity" class="purity-highlight">
-              <span class="purity-label">Purity</span>
-              <span class="purity-value">{{ product.purity }}</span>
-            </div>
-
-            <!-- Actions -->
+            <!-- Actions：需先选中货号才能加购；纯度与加购同一行 -->
             <div class="detail-actions">
-              <router-link to="/contact" class="btn btn-primary btn-lg add-cart-btn">
+              <div class="action-row">
+                <div v-if="product.purity" class="purity-highlight">
+                  <span class="purity-label">Purity</span>
+                  <span class="purity-value">{{ product.purity }}</span>
+                </div>
+                <div class="qty-stepper">
+                  <button type="button" class="qty-btn" :disabled="qty <= 1" @click="qty--">−</button>
+                  <span class="qty-value">{{ qty }}</span>
+                  <button type="button" class="qty-btn" @click="qty++">+</button>
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-accent btn-lg add-cart-btn"
+                    :disabled="itemCodes.length > 0 && !selectedItem"
+                    @click="addToCart"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                  {{ addedFlash ? 'Added to Cart ✓' : 'Add to Cart' }}
+                </button>
+              </div>
+              <p v-if="itemCodes.length && !selectedItem" class="select-hint">
+                Please select an item number above before adding to cart.
+              </p>
+              <router-link to="/contact" class="btn btn-primary btn-lg quote-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9 2-2 2z"/>
                   <path d="M22 6l-10 7L2 6"/>
                 </svg>
                 Get Discounted Quote
@@ -112,18 +137,18 @@
                 <tr>
                   <th>Specification</th>
                   <th>No.</th>
-                  <!-- 价格列已暂时隐藏 <th>Price</th> -->
+                  <th>Price</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr v-for="(row, idx) in specRows" :key="idx">
                   <td>{{ row.spec }}</td>
                   <td>{{ row.item || '—' }}</td>
-                  <!-- 价格列已暂时隐藏 <td class="spec-price">{{ row.price }}</td> -->
+                  <td class="spec-price">{{ row.price }}</td>
                 </tr>
                 <tr v-if="product.purity">
                   <td>Purity</td>
-                  <td colspan="1">{{ product.purity }}</td>
+                  <td colspan="2">{{ product.purity }}</td>
                 </tr>
                 </tbody>
               </table>
@@ -151,6 +176,22 @@
         </div>
       </div>
     </section>
+
+    <!-- 加购成功通知卡片 -->
+    <transition name="toast-slide">
+      <div v-if="cartToast" class="cart-toast">
+        <span class="cart-toast-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </span>
+        <div class="cart-toast-text">
+          <strong>Added to Cart</strong>
+          <span>Please check your cart for the quote.</span>
+        </div>
+        <router-link to="/cart" class="cart-toast-link" @click.native="cartToast = false">View Cart</router-link>
+      </div>
+    </transition>
   </div>
 
   <!-- Loading -->
@@ -175,6 +216,7 @@
 <script>
 import ProductCard from '../components/ProductCard.vue'
 import {GetProductDetail} from '@/api/product'
+import {cart} from '@/utils/cart'
 
 export default {
   name: 'ProductDetail',
@@ -184,7 +226,17 @@ export default {
       product: null,
       relatedProducts: [],
       // 接口加载中，避免加载完成前误显示 Product Not Found
-      loading: true
+      loading: true,
+      // 当前选中的货号（未选中时禁止加购）
+      selectedItem: '',
+      // 加购数量
+      qty: 1,
+      // 加购成功提示闪现
+      addedFlash: false,
+      addedTimer: null,
+      // 加购成功顶部提示条
+      cartToast: false,
+      toastTimer: null
     }
   },
   computed: {
@@ -192,6 +244,11 @@ export default {
     itemCodes() {
       if (!this.product) return []
       return (this.product.item_no || '').split(',').map(s => s.trim()).filter(Boolean)
+    },
+    // 选中货号对应的规格行（用于加购时记录规格与单价）
+    selectedSpecRow() {
+      if (!this.selectedItem) return null
+      return this.specRows.find(r => r.item === this.selectedItem) || null
     },
     // 规格表格行：优先读独立字段 product.specs（后端 JSON 数组），缺失/解析失败时回退解析 details
     specRows() {
@@ -262,12 +319,48 @@ export default {
     // 从后端接口加载产品详情与相关产品
     this.fetchDetail()
   },
+  beforeDestroy() {
+    if (this.addedTimer) clearTimeout(this.addedTimer)
+    if (this.toastTimer) clearTimeout(this.toastTimer)
+  },
   methods: {
+    // 点击货号标签：选中/取消选中
+    selectItem(code) {
+      this.selectedItem = this.selectedItem === code ? '' : code
+    },
+    // 加入购物车：有货号时必须先选中货号；无货号商品可直接加购
+    addToCart() {
+      if (!this.product) return
+      if (this.itemCodes.length && !this.selectedItem) return
+      cart.add({
+        productId: this.product.id,
+        name: this.product.name,
+        image: this.product.album,
+        itemNo: this.selectedItem,
+        spec: this.selectedSpecRow ? this.selectedSpecRow.spec : '',
+        price: this.selectedSpecRow ? this.selectedSpecRow.price : (this.product.price || '')
+      }, this.qty)
+      this.addedFlash = true
+      if (this.addedTimer) clearTimeout(this.addedTimer)
+      this.addedTimer = setTimeout(() => {
+        this.addedFlash = false
+      }, 1500)
+      // 顶部提示条：已添加到购物车，请到购物车查看
+      this.cartToast = true
+      if (this.toastTimer) clearTimeout(this.toastTimer)
+      this.toastTimer = setTimeout(() => {
+        this.cartToast = false
+      }, 5000)
+    },
     fetchDetail() {
       const id = parseInt(this.$route.params.id)
       this.loading = true
       this.product = null
       this.relatedProducts = []
+      // 切换产品时重置选货与数量
+      this.selectedItem = ''
+      this.qty = 1
+      this.addedFlash = false
       GetProductDetail({id}).then(res => {
         const list = res.productData || []
         this.product = list.length ? list[0] : null
@@ -284,6 +377,84 @@ export default {
 </script>
 
 <style scoped>
+/* 加购成功通知卡片：右下角悬浮 */
+.cart-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(15, 36, 64, 0.18);
+}
+
+.cart-toast-icon {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #34d399, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.35);
+}
+
+.cart-toast-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cart-toast-text strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.cart-toast-text span {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.cart-toast-link {
+  margin-left: 6px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  white-space: nowrap;
+}
+
+.cart-toast-link:hover {
+  color: var(--primary);
+}
+
+.toast-slide-enter-active,
+.toast-slide-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-slide-enter,
+.toast-slide-leave-to {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+@media (max-width: 767px) {
+  .cart-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
 /* ===== Breadcrumb ===== */
 .page-breadcrumb {
   display: flex;
@@ -488,6 +659,24 @@ export default {
   padding: 5px 13px;
 }
 
+/* 可选中货号标签 */
+.item-chip-selectable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.item-chip-selectable:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.item-chip.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
 .detail-desc {
   font-size: 0.95rem;
   color: var(--text-secondary);
@@ -526,15 +715,106 @@ export default {
 /* Actions */
 .detail-actions {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   margin-top: 5px;
-  margin-bottom: 25px;
+  margin-bottom: 12px;
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 纯度徽章与加购同一行：三者统一固定高度(48px)，比下方 Quote 按钮更高以突出加购行 */
+.action-row .purity-highlight {
+  margin-bottom: 0;
+  height: 48px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+/* 数量选择器 */
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fff;
+}
+
+.qty-btn {
+  width: 42px;
+  height: 100%;
+  border: none;
+  background: var(--bg-light);
+  font-size: 1.1rem;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background: var(--border-light);
+}
+
+.qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.qty-value {
+  min-width: 44px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .add-cart-btn {
-  flex: 1;
-  min-width: 200px;
+  flex: 1 1 160px;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.add-cart-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quote-btn {
+  width: 100%;
+  height: 40px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 无提示文字时（加购行直接接 Quote 按钮）拉开两者距离，避免过于紧密 */
+.action-row + .quote-btn {
+  margin-top: 10px;
+}
+
+.select-hint {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin: 0;
 }
 
 /* Guarantees */
@@ -805,7 +1085,7 @@ export default {
 
   .add-cart-btn {
     min-width: auto;
-    padding: 12px 24px;
+    padding: 0 16px;
     font-size: 0.95rem;
   }
 

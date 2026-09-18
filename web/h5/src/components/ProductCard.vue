@@ -31,11 +31,9 @@
           <span v-if="itemCodes.length > 3" class="item-chip item-more">+{{ itemCodes.length - 3 }}</span>
         </span>
       </div>
-      <!-- 价格展示已暂时隐藏
       <div class="card-price">
         <span class="price-range">{{ product.price }}</span>
       </div>
-      -->
     </div>
   </router-link>
 </template>
@@ -159,7 +157,8 @@ export default {
 
 /* Card Body */
 .card-body {
-  padding: 18px;
+  /* 底部内边距收窄，与 .card-price 上内边距一致，控制价格上下留白 */
+  padding: 18px 18px 12px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -233,7 +232,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 8px;
+  /* 上内边距与 card-body 底部内边距(12px)一致，使价格在分隔线与卡片底边之间垂直居中 */
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
 }
 
@@ -300,7 +300,7 @@ export default {
   }
 
   .card-body {
-    padding: 10px;
+    padding: 10px 10px 8px;
     gap: 5px;
   }
 
@@ -334,7 +334,8 @@ export default {
   }
 
   .card-price {
-    padding-top: 6px;
+    /* 移动端 card-body 底部内边距为 8px，保持一致以垂直居中 */
+    padding-top: 8px;
   }
 
   .card-items {

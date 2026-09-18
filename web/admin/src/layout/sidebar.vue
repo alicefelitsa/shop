@@ -52,6 +52,7 @@ export default {
         {path: '/product', title: '产品', icon: 'el-icon-goods'},
         {path: '/category', title: '分类', icon: 'el-icon-menu'},
         {path: '/message', title: '留言', icon: 'el-icon-chat-dot-square'},
+        {path: '/intent', title: '购物意向', icon: 'el-icon-shopping-cart-1'},
         {path: '/contact', title: '联系方式', icon: 'el-icon-phone-outline'},
         {path: '/setting', title: '设置', icon: 'el-icon-setting'},
       ],

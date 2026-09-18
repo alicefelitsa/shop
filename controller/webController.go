@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -148,4 +149,52 @@ func (wc *WebController) GetSiteConfig(c *gin.Context) {
 			"display_type": cfg.DisplayType,
 		},
 	})
+}
+
+// AddCartIntent 客户提交购物意向（平台无支付，仅记录想购买的商品供后台跟进报价）
+func (wc *WebController) AddCartIntent(c *gin.Context) {
+	data := make(map[string]interface{})
+	_ = c.BindJSON(&data)
+	name, _ := data["name"].(string)
+	email, _ := data["email"].(string)
+	remark, _ := data["remark"].(string)
+	itemsRaw, ok := data["items"].([]interface{})
+	if name == "" || email == "" || remark == "" || !ok || len(itemsRaw) == 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "请填写完整的提交信息"})
+		return
+	}
+	itemsJson, err := json.Marshal(itemsRaw)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "商品数据格式错误"})
+		return
+	}
+	totalQty := 0
+	for _, it := range itemsRaw {
+		if m, ok := it.(map[string]interface{}); ok {
+			if q, ok := m["qty"].(float64); ok {
+				totalQty += int(q)
+			}
+		}
+	}
+	ip := c.ClientIP()
+	create := map[string]interface{}{
+		"name":       name,
+		"email":      email,
+		"remark":     remark,
+		"items":      string(itemsJson),
+		"total_qty":  totalQty,
+		"ip":         ip,
+		"ip_address": tools.GetIpAddress(ip),
+		"ctime":      time.Now(),
+	}
+	result := wc.db.Table("cart_intent").Create(create)
+	if result.Error != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": "提交失败"})
+		return
+	}
+	if result.RowsAffected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "提交成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "提交失败"})
+	}
 }

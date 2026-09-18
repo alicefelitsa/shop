@@ -181,6 +181,58 @@ func (bc *BossController) DelMessage(c *gin.Context) {
 	}
 }
 
+// GetCartIntent 获取客户购物意向列表
+func (bc *BossController) GetCartIntent(c *gin.Context) {
+	var code, count int
+	var where string
+	name := c.Query("name")
+	email := c.Query("email")
+	if name != "" {
+		where += fmt.Sprintf("name like '%%%v%%' && ", name)
+	}
+	if email != "" {
+		where += fmt.Sprintf("email like '%%%v%%' && ", email)
+	}
+	if where != "" {
+		where = fmt.Sprintf(" where %v", strings.TrimRight(where, " && "))
+	}
+	data := make([]map[string]interface{}, 0)
+	err := bc.db.Raw("select * from cart_intent" + where + " order by id desc" + config.PageLimit(c)).Scan(&data).Error
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	for _, row := range data {
+		for col, val := range row {
+			if t, ok := val.(time.Time); ok {
+				row[col] = t.Format("2006-01-02 15:04:05")
+			}
+		}
+	}
+	err = bc.db.Raw("select count(id) from cart_intent" + where).Scan(&count).Error
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 501, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":    code,
+		"message": "操作成功",
+		"count":   count,
+		"data":    data,
+	})
+}
+
+// DelCartIntent 删除客户购物意向
+func (bc *BossController) DelCartIntent(c *gin.Context) {
+	ids := c.Query("ids")
+	result := bc.db.Exec("delete from cart_intent where id " + "in(" + ids + ")")
+	if result.RowsAffected > 0 {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "操作成功"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"code": 400, "message": "操作失败"})
+	}
+}
+
 // GetProductList 获取产品列表
 func (bc *BossController) GetProductList(c *gin.Context) {
 	var code, count int

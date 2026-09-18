@@ -6,8 +6,8 @@
         <router-link to="/" class="logo" @click.native="closeMenu">
 <!--          <span class="logo-icon">⬡</span>-->
           <span class="logo-icon">🌍</span>
-<!--          <span class="logo-text">HKR<span class="logo-accent">oids</span></span>-->
-          <span class="logo-text">Utit<span class="logo-accent">anu 🔥</span></span>
+          <span class="logo-text">HKR<span class="logo-accent">oids 🔥</span></span>
+<!--          <span class="logo-text">Utit<span class="logo-accent">anu 🔥</span></span>-->
         </router-link>
 
         <!-- Desktop Navigation -->
@@ -25,8 +25,16 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
+          <router-link to="/cart" class="cart-btn" aria-label="Shopping cart">
+            <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+          </router-link>
           <router-link to="/contact" class="btn btn-accent btn-sm header-cta" @click.native="closeMenu">
-            Get Quote 🛒
+            Get Quote
           </router-link>
 
           <!-- Hamburger -->
@@ -64,8 +72,16 @@
 </template>
 
 <script>
+import {cartState} from '@/utils/cart'
+
 export default {
   name: 'SiteHeader',
+  computed: {
+    // 购物车总件数（响应式，用于角标）
+    cartCount() {
+      return cartState.items.reduce((n, it) => n + (it.qty || 0), 0)
+    }
+  },
   data() {
     return {
       menuOpen: false,
@@ -211,6 +227,40 @@ export default {
   align-items: center;
   gap: 12px;
   z-index: 1001;
+}
+
+/* Cart button */
+.cart-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+  transition: background 0.2s ease;
+}
+
+.cart-btn:hover {
+  background: var(--bg-light);
+}
+
+.cart-badge {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Hamburger */

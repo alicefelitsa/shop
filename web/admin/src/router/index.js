@@ -22,6 +22,12 @@ const routes = [
                 meta: {title: '留言'}
             },
             {
+                path: 'intent',
+                name: 'intent',
+                component: () => import('@/views/intent/index'),
+                meta: {title: '购物意向'}
+            },
+            {
                 path: 'product',
                 name: 'product',
                 component: () => import('@/views/product/index'),

@@ -6,8 +6,8 @@
         <router-link to="/" class="footer-logo">
 <!--          <span class="logo-icon">⬡</span>-->
           <span class="logo-icon">🌍</span>
-          <span class="logo-text">Utit<span class="logo-accent">anu 🔥</span></span>
-<!--          <span class="logo-text">HKR<span class="logo-accent">oids</span></span>-->
+<!--          <span class="logo-text">Utit<span class="logo-accent">anu 🔥</span></span>-->
+          <span class="logo-text">HKR<span class="logo-accent">oids 🔥</span></span>
         </router-link>
         <p class="footer-desc">
           Your trusted supplier of premium research peptides and laboratory equipment.
@@ -80,7 +80,7 @@
     <!-- Footer Bottom -->
     <div class="footer-bottom">
       <div class="container footer-bottom-inner">
-        <p>&copy; {{ currentYear }} utitanu.com. All rights reserved.</p>
+        <p>&copy; {{ currentYear }} shop.zly163.org. All rights reserved.</p>
         <div class="footer-bottom-links">
           <a href="#">Privacy Policy</a>
           <a href="#">Terms of Service</a>

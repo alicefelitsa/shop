@@ -32,6 +32,8 @@ func SetupRouter() *gin.Engine {
 		boss.GET("/auth/user", bossController.AuthUser)
 		boss.GET("/GetMessage", bossController.GetMessage)
 		boss.GET("/DelMessage", bossController.DelMessage)
+		boss.GET("/GetCartIntent", bossController.GetCartIntent)
+		boss.GET("/DelCartIntent", bossController.DelCartIntent)
 		boss.GET("/GetProductList", bossController.GetProductList)
 		boss.POST("/UploadImage", bossController.UploadImage)
 		boss.POST("/AddProduct", bossController.AddProduct)
@@ -53,6 +55,7 @@ func SetupRouter() *gin.Engine {
 		web.GET("/GetProduct", webController.GetProduct)
 		web.GET("/GetProductDetail", webController.GetProductDetail)
 		web.POST("/AddMessage", webController.AddMessage)
+		web.POST("/AddCartIntent", webController.AddCartIntent)
 		web.GET("/GetContactInfo", webController.GetContactInfo)
 		web.GET("/GetSiteConfig", webController.GetSiteConfig)
 
