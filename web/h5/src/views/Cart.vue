@@ -78,8 +78,8 @@
     <div v-if="submitOpen" class="intent-mask">
       <div class="intent-modal">
         <button type="button" class="intent-close" aria-label="Close" @click="closeSubmit">&times;</button>
-        <h3 class="intent-title">Submit Your Cart for a Quote</h3>
-        <p class="intent-sub">We will review the items below and contact you with a discounted offer. No payment is required on this site.</p>
+        <h3 class="intent-title">Submit for a Quote</h3>
+        <p class="intent-sub">We'll reply with a discounted offer. No payment needed.</p>
 
         <ul class="intent-items">
           <li v-for="it in items" :key="'m-' + it.productId + '-' + it.itemNo">
@@ -95,13 +95,14 @@
         <label class="intent-label">Remark *</label>
         <textarea v-model.trim="form.remark" class="intent-input intent-textarea" rows="3" placeholder="Anything we should know?"></textarea>
 
-        <p v-if="submitError" class="intent-error">{{ submitError }}</p>
-
         <div class="intent-actions">
-          <button type="button" class="btn btn-outline" @click="closeSubmit">Cancel</button>
-          <button type="button" class="btn btn-accent" :disabled="submitting" @click="doSubmit">
-            {{ submitting ? 'Submitting...' : 'Submit Request' }}
-          </button>
+          <p v-if="submitError" class="intent-error">{{ submitError }}</p>
+          <div class="intent-actions-row">
+            <button type="button" class="btn btn-outline" @click="closeSubmit">Cancel</button>
+            <button type="button" class="btn btn-accent" :disabled="submitting" @click="doSubmit">
+              {{ submitting ? 'Submitting...' : 'Submit Request' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -556,15 +557,25 @@ export default {
 
 .intent-textarea {
   resize: vertical;
+  margin-bottom: 20px;
 }
 
 .intent-error {
   font-size: 0.82rem;
   color: var(--danger);
-  margin: -4px 0 10px;
+  margin: 0 0 10px;
 }
 
 .intent-actions {
+  position: sticky;
+  bottom: 0;
+  margin: 0 -24px -24px;
+  padding: 14px 24px 16px;
+  background: var(--bg-white);
+  box-shadow: 0 -10px 24px rgba(15, 36, 64, 0.08);
+}
+
+.intent-actions-row {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
@@ -590,6 +601,29 @@ export default {
 
   .cart-summary-actions .btn {
     width: 100%;
+    justify-content: center;
+  }
+
+  /* 提交弹窗：手机端改为底部抽屉式，内容滚动、按钮吸底 */
+  .intent-mask {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .intent-modal {
+    max-width: none;
+    max-height: 88vh;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 18px 18px;
+  }
+
+  .intent-actions {
+    margin: 0 -18px -18px;
+    padding: 10px 18px 12px;
+  }
+
+  .intent-actions .btn {
+    flex: 1;
     justify-content: center;
   }
 }
